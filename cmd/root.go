@@ -48,6 +48,9 @@ func Execute() {
 }
 
 func init() {
+	// Disable completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
 	// Add subcommands
 	rootCmd.AddCommand(playCmd)
 	rootCmd.AddCommand(searchCmd)
@@ -58,8 +61,6 @@ func init() {
 	rootCmd.AddCommand(resumeCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(shuffleCmd) // Main shuffle command (for all stocked songs)
-	rootCmd.AddCommand(volCmd)
-	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(nextCmd)
 	rootCmd.AddCommand(prevCmd)
 
