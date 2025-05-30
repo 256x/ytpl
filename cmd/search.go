@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"ytpl/internal/player"
@@ -65,12 +66,28 @@ var searchCmd = &cobra.Command{
 		}
 		selectedTrack := tracks[idxs[0]]
 
-		downloadSpinner := util.StartSpinner(fmt.Sprintf("Downloading '%s'...", selectedTrack.Title))
-		downloadedFilePath, finalTrackInfo, err := yt.DownloadTrack(cfg, selectedTrack.ID)
-		util.StopSpinner(downloadSpinner)
+		// Check if track already exists locally
+		localTrackInfo, err := yt.GetLocalTrackInfo(cfg, selectedTrack.ID)
+		var downloadedFilePath string
+		var finalTrackInfo *yt.TrackInfo
 
-		if err != nil {
-			log.Fatalf("Error downloading track: %v", err)
+		if err == nil {
+			// Use existing local file
+			log.Printf("Using existing local track: %s", selectedTrack.Title)
+			downloadedFilePath = filepath.Join(cfg.DownloadDir, selectedTrack.ID+".mp3")
+			// Use the local track info but preserve the title from search results
+			// as it might be more up-to-date
+			finalTrackInfo = localTrackInfo
+			finalTrackInfo.Title = selectedTrack.Title
+		} else {
+			// Download the track if not found locally
+			downloadSpinner := util.StartSpinner(fmt.Sprintf("Downloading '%s'...", selectedTrack.Title))
+			downloadedFilePath, finalTrackInfo, err = yt.DownloadTrack(cfg, selectedTrack.ID)
+			util.StopSpinner(downloadSpinner)
+
+			if err != nil {
+				log.Fatalf("Error downloading track: %v", err)
+			}
 		}
 
 		if err := player.StartPlayer(cfg, appState, downloadedFilePath); err != nil {
