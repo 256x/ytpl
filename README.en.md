@@ -31,16 +31,16 @@ Download the binary suitable for your OS and architecture from the [releases pag
 wget https://github.com/256x/ytpl/releases/download/vX.Y.Z/ytpl_linux_amd64
 chmod +x ytpl_linux_amd64
 sudo mv ytpl_linux_amd64 /usr/local/bin/ytpl
-
+```
 Using Go
 If you have Go installed, you can install it with the following command:
-
+```
 # For Go 1.16 or later
 go install github.com/256x/ytpl@latest
-
+```
 The go install command installs the binary to $GOPATH/bin or $GOBIN. Make sure these directories are included in your PATH.
 Building from Source
-
+```
 # Clone the repository
 git clone https://github.com/256x/ytpl.git
 cd ytpl
@@ -50,10 +50,10 @@ go mod download
 go build -o ytpl
 # Place the binary in a directory included in PATH
 sudo mv ytpl /usr/local/bin/
-
+```
 Usage
 Basic Commands
-
+```
 # Display help
 ytpl --help
 # Search for and play music on YouTube
@@ -82,9 +82,9 @@ ytpl next
 ytpl prev
 # Shuffle play all locally saved songs
 ytpl shuffle
-
+```
 Playlist Management
-
+```
 # Interact with playlists (if no subcommand is specified)
 ytpl list
 # Create a new playlist
@@ -102,18 +102,18 @@ ytpl list show myplaylist
 ytpl list play myplaylist
 # Shuffle play a playlist
 ytpl list shuffle myplaylist
-
+```
 Track Management
-
+```
 # Delete downloaded tracks
 # Deleted tracks are automatically removed from all playlists as well
 ytpl delete
 # Adjust volume (0-100)
 ytpl volume 80
-
+```
 Configuration
 The configuration file is saved at ~/.config/ytpl/config.toml. The following configuration items are available, each with a default value:
-
+```
 # Directory to save YouTube audio files
 # Environment variables like $HOME can be used
 download_dir = "$HOME/.local/share/ytpl/mp3/"
@@ -133,30 +133,21 @@ cookie_browser = "chrome"
 # cookie_profile = ""
 # Maximum number of search results to get from YouTube
 max_search_results = 30
-
+```
 Description of Main Configuration Items
-•
-download_dir: Directory for saving downloaded tracks
-•
-player_path: Path to the MPV player (mpv means it must be in the PATH)
-•
-player_ipc_socket_path: Path to the IPC socket used to control MPV
-•
-default_volume: Default volume upon startup (0-100)
-•
-yt_dlp_path: Path to yt-dlp (default: "yt-dlp")
-•
-playlist_dir: Directory for saving playlists (default: "$HOME/.local/share/ytpl/playlists/")
-•
-cookie_browser: Specifies the browser to load cookies from (needed for downloading videos that require login, default: "firefox")
-•
-max_search_results: Maximum number of search results to display
+- download_dir: Directory for saving downloaded tracks
+- player_path: Path to the MPV player (mpv means it must be in the PATH)
+- player_ipc_socket_path: Path to the IPC socket used to control MPV
+- default_volume: Default volume upon startup (0-100)
+- yt_dlp_path: Path to yt-dlp (default: "yt-dlp")
+- playlist_dir: Directory for saving playlists (default: "$HOME/.local/share/ytpl/playlists/")
+- cookie_browser: Specifies the browser to load cookies from (needed for downloading videos that require login, default: "firefox")
+- max_search_results: Maximum number of search results to display
+
 License
 This project is released under the MIT License. See the LICENSE file for details.
+
 Notes
-•
-Please use this software in compliance with YouTube's Terms of Service.
-•
-Downloaded content should be limited to personal use.
-•
-If downloading a large number of tracks, be mindful of YouTube's rate limits.
+- Please use this software in compliance with YouTube's Terms of Service.
+- Downloaded content should be limited to personal use.
+- If downloading a large number of tracks, be mindful of YouTube's rate limits.
