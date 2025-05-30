@@ -18,6 +18,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version is the current version of the application.
+const Version = "0.1.2"
+
 var (
 	cfg      *config.Config
 	appState *state.PlayerState
@@ -25,8 +28,9 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "ytpl",
-	Short: "ytpl is a CLI YouTube music player",
+	Use:     "ytpl",
+	Version: Version,
+	Short:   "ytpl is a CLI YouTube music player",
 	Long: `ytpl is a command-line application designed for searching and playing YouTube videos.
 It allows you to manage local music stock and create custom playlists.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -41,6 +45,7 @@ It allows you to manage local music stock and create custom playlists.`,
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
+	rootCmd.SetVersionTemplate(`{{printf "%s version %s\n" .Name .Version}}`)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

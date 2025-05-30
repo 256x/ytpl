@@ -142,7 +142,7 @@ func GetDefaultConfigContent() string {
 
 # Directory to store downloaded YouTube audio files.
 # Environment variables like $HOME are expanded.
-download_dir = "$HOME/music/ytpl_stock/"
+download_dir = "$HOME/.local/share/ytpl/mp3/"
 
 # Path to the media player executable (e.g., mpv).
 # Garia is designed to work with mpv's IPC features.
@@ -155,24 +155,22 @@ player_ipc_socket_path = "/tmp/ytpl-mpv-socket"
 # Default volume level (0-100).
 default_volume = 80
 
-# Path to the yt-dlp executable.
+# Path to yt-dlp executable.
 yt_dlp_path = "yt-dlp"
 
 # Directory to store playlist files.
-# If not specified, ~/.local/share/ytpl/playlists will be used.
-playlist_dir = "$HOME/music/ytpl_playlists/"
+playlist_dir = "$HOME/.local/share/ytpl/playlists/"
 
 # Cookie settings for downloading age-restricted YouTube videos.
-# Specify the browser from which to load cookies (e.g., "firefox", "chrome", "chromium", "brave", "edge").
+# Specify the browser from which to load cookies (e.g., "chrome", "firefox", "chromium", "brave", "edge").
 # Refer to yt-dlp documentation for supported browsers: https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp
-cookie_browser = ""
+cookie_browser = "chrome"
 # (Optional) Browser profile name.
 # Usually not needed for default profiles, but specify if you use multiple profiles.
 # e.g., "Default", "Profile 1", "Default-Browser-Profile"
 # cookie_profile = ""
 
 # Maximum number of search results to retrieve from YouTube.
-# Default is 10.
-max_search_results = 15
+max_search_results = 30
 `
 }
