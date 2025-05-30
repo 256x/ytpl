@@ -18,7 +18,7 @@
 
 - Go 1.16 or later
 - MPV player
-- YouTube-DL or yt-dlp
+- yt-dlp
 
 ### Installation Steps
 

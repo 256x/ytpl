@@ -19,7 +19,7 @@
 
 - Go 1.16 以上
 - MPVプレーヤー
-- YouTube-DL または yt-dlp
+- yt-dlp
 
 ### インストール手順
 
