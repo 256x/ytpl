@@ -49,8 +49,11 @@ func Execute() {
 
 func init() {
 	// Add subcommands
-	rootCmd.AddCommand(searchCmd)
 	rootCmd.AddCommand(playCmd)
+	rootCmd.AddCommand(searchCmd)
+	rootCmd.AddCommand(volCmd)
+	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(delCmd)
 	rootCmd.AddCommand(pauseCmd)
 	rootCmd.AddCommand(resumeCmd)
 	rootCmd.AddCommand(stopCmd)

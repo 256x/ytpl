@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"ytpl/internal/player"
-	// "ytpl/internal/playlist" // playlistは直接使わないので削除済み
 	"ytpl/internal/state"
 	"ytpl/internal/yt"
 

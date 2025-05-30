@@ -4,9 +4,8 @@ package playertags
 import (
 	"fmt"
 	"os"
-	// "strings" // stringsパッケージは不要になるので削除
 
-	"github.com/dhowden/tag" // MP3タグ読み取りライブラリ
+	"github.com/dhowden/tag" // Library for reading MP3 tags
 )
 
 // AudioInfo represents extracted audio metadata.

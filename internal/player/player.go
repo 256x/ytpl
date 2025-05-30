@@ -4,7 +4,7 @@ package player
 import (
 	"encoding/json"
 	"fmt"
-	"log" // logパッケージをインポート
+	"log"
 	"net"
 	"os"
 	"os/exec"

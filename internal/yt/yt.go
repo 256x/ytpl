@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -153,6 +154,27 @@ func DownloadTrack(cfg *config.Config, trackID string) (string, *TrackInfo, erro
 	}
 
 	return downloadedFilePath, &downloadedTrackInfo, nil
+}
+
+// ListLocalTracks returns a list of all locally downloaded tracks.
+func ListLocalTracks(cfg *config.Config) ([]*TrackInfo, error) {
+	files, err := filepath.Glob(filepath.Join(cfg.DownloadDir, "*.info.json"))
+	if err != nil {
+		return nil, fmt.Errorf("error listing local tracks: %w", err)
+	}
+
+	var tracks []*TrackInfo
+	for _, file := range files {
+		trackID := strings.TrimSuffix(filepath.Base(file), ".info.json")
+		track, err := GetLocalTrackInfo(cfg, trackID)
+		if err != nil {
+			log.Printf("Warning: failed to get info for %s: %v", trackID, err)
+			continue
+		}
+		tracks = append(tracks, track)
+	}
+
+	return tracks, nil
 }
 
 // GetLocalTrackInfo reads metadata for a local track from its .info.json file.

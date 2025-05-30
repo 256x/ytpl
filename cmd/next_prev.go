@@ -6,14 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	// "strings" // <-- NO LONGER USED: この行を削除
 	"time"
 
 	"ytpl/internal/player"
-	// "ytpl/internal/playlist" // playlistは直接使わないので削除済み
-	// "ytpl/internal/playertags" // <-- NO LONGER USED: この行を削除
 	"ytpl/internal/state"
-	// "ytpl/internal/yt" // <-- NO LONGER USED: この行を削除
 
 	"github.com/spf13/cobra"
 )

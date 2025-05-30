@@ -8,7 +8,6 @@ require (
 	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8
 	github.com/koki-develop/go-fzf v0.15.0
 	github.com/spf13/cobra v1.9.1
-	golang.org/x/term v0.32.0
 )
 
 require (
@@ -31,5 +30,6 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 )

@@ -110,10 +110,16 @@ var listAddCmd = &cobra.Command{
 			Title: appState.CurrentTrackTitle,
 		}
 
-		if err := playlist.AddTrack(playlistName, trackToAdd); err != nil {
-			log.Fatalf("Error adding song to playlist '%s': %v", playlistName, err)
+		err := playlist.AddTrack(playlistName, trackToAdd)
+		if err != nil {
+			if strings.Contains(err.Error(), "already exists in playlist") {
+				fmt.Printf("Track '%s' is already in playlist '%s'\n", appState.CurrentTrackTitle, playlistName)
+			} else {
+				log.Fatalf("Error adding song to playlist '%s': %v", playlistName, err)
+			}
+		} else {
+			fmt.Printf("Added \"%s\" to playlist '%s'\n", appState.CurrentTrackTitle, playlistName)
 		}
-		fmt.Printf("Added \"%s\" to playlist '%s'.\n", appState.CurrentTrackTitle, playlistName)
 	},
 }
 
