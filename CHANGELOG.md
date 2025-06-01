@@ -5,30 +5,30 @@ All notable changes to this project will be documented in this file.
 ## [0.1.3] - 2025-06-01
 
 ### Added
-- プレイリスト表示の改善: 時間表示を削除し、よりシンプルな表示に変更
-- プレイリストが存在しない場合のエラーメッセージを改善
-- プレイリスト表示時のプロンプトを `[ play from プレイリスト名 ] >` の形式に変更
+- Improved playlist display: Removed duration display for a cleaner interface
+- Enhanced error message when a playlist doesn't exist
+- Updated playlist prompt to `[ play from playlist_name ] >` format
 
 ### Changed
-- プレイリストが空の場合のメッセージのフォーマットを改善
+- Improved formatting of empty playlist messages
 
 ### Fixed
-- 存在しないプレイリストを指定した際のエラーハンドリングを改善
+- Enhanced error handling for non-existent playlists
 
 ## [0.1.2] - 2025-06-01
 
 ### Added
-- プレイリスト機能の初期実装
-- 基本的なプレイリストの作成、表示、削除機能を追加
+- Initial implementation of playlist functionality
+- Basic playlist creation, display, and deletion features
 
 ## [0.1.1] - 2025-06-01
 
 ### Added
-- 基本的な再生機能の実装
-- 検索とダウンロード機能の追加
+- Basic playback functionality
+- Search and download features
 
 ## [0.1.0] - 2025-06-01
 
 ### Added
-- プロジェクトの初期セットアップ
-- 基本的なコマンドラインインターフェースの実装
+- Initial project setup
+- Basic command-line interface implementation
