@@ -13,15 +13,16 @@ import (
 
 // PlayerState holds the current state of the application's player.
 type PlayerState struct {
-	PID                  int    `json:"pid"`
-	IPCSocketPath        string `json:"ipc_socket_path"`
-	CurrentTrackID       string `json:"current_track_id"`
-	CurrentTrackTitle    string `json:"current_track_title"`
-	CurrentPlaylist      string `json:"current_playlist"`
-	IsPlaying            bool   `json:"is_playing"` // true: playing, false: paused
-	Volume               int    `json:"volume"`
-	DownloadedFilePath   string `json:"downloaded_file_path"`
-	LastPlayedTrackIndex int    `json:"last_played_track_index"` // For playlist continuation
+	PID                  int     `json:"pid"`
+	IPCSocketPath        string  `json:"ipc_socket_path"`
+	CurrentTrackID       string  `json:"current_track_id"`
+	CurrentTrackTitle    string  `json:"current_track_title"`
+	CurrentTrackDuration float64 `json:"current_track_duration"` // Duration in seconds
+	CurrentPlaylist      string  `json:"current_playlist"`
+	IsPlaying            bool    `json:"is_playing"` // true: playing, false: paused
+	Volume               int     `json:"volume"`
+	DownloadedFilePath   string  `json:"downloaded_file_path"`
+	LastPlayedTrackIndex int     `json:"last_played_track_index"` // For playlist continuation
 	PlaybackHistory      []string `json:"playback_history"`        // For 'shuffle' or 'next' tracking
 	ShuffleQueue         []string `json:"shuffle_queue"`           // For shuffle mode
 	mu                   sync.Mutex // Mutex for concurrent access

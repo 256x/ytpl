@@ -73,7 +73,7 @@ func SearchYouTube(cfg *config.Config, query string) ([]TrackInfo, error) {
 		}
 		var track TrackInfo
 		if err := json.Unmarshal([]byte(line), &track); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to unmarshal yt-dlp JSON line: %v\nLine: %s\n", err, line)
+			fmt.Fprintf(os.Stderr, "warning: failed to unmarshal yt-dlp json line: %v\nline: %s\n", err, line)
 			continue
 		}
 		// Skip channels: channels typically have 0 duration and specific URL pattern.
@@ -129,12 +129,12 @@ func DownloadTrack(cfg *config.Config, trackID string) (string, *TrackInfo, erro
 
 	var downloadedTrackInfo TrackInfo
 	if err := json.Unmarshal(output, &downloadedTrackInfo); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to unmarshal yt-dlp download info JSON from stdout: %v\nOutput: %s\n", err, string(output))
+		fmt.Fprintf(os.Stderr, "warning: failed to unmarshal yt-dlp download info json from stdout: %v\noutput: %s\n", err, string(output))
 		// Fallback: try to load from local .info.json if JSON output from yt-dlp was malformed
 		infoPath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.info.json", trackID))
 		if data, readErr := os.ReadFile(infoPath); readErr == nil {
 			if json.Unmarshal(data, &downloadedTrackInfo) == nil {
-				fmt.Fprintf(os.Stderr, "Successfully loaded info from local file: %s\n", infoPath)
+				fmt.Fprintf(os.Stderr, "successfully loaded info from local file: %s\n", infoPath)
 			}
 		}
 	}
@@ -168,7 +168,7 @@ func ListLocalTracks(cfg *config.Config) ([]*TrackInfo, error) {
 		trackID := strings.TrimSuffix(filepath.Base(file), ".info.json")
 		track, err := GetLocalTrackInfo(cfg, trackID)
 		if err != nil {
-			log.Printf("Warning: failed to get info for %s: %v", trackID, err)
+			log.Printf("warning: failed to get info for %s: %v", trackID, err)
 			continue
 		}
 		tracks = append(tracks, track)
@@ -189,15 +189,15 @@ func GetLocalTrackInfo(cfg *config.Config, trackID string) (*TrackInfo, error) {
 
 	var track TrackInfo
 	if err := json.Unmarshal(data, &track); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal info JSON for track %s: %w", trackID, err)
+		return nil, fmt.Errorf("failed to unmarshal info json for track %s: %w", trackID, err)
 	}
 
 	// Populate missing fields if they are empty
 	if track.Title == "" {
-		track.Title = "Unknown Title from JSON"
+		track.Title = "unknown title from json"
 	}
 	if track.Uploader == "" && track.Creator == "" {
-		track.Uploader = "Unknown Artist from JSON" // Default fallback for artist
+		track.Uploader = "unknown artist from json" // default fallback for artist
 	}
 	// Add more fallbacks for other fields if needed
 

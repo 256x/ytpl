@@ -3,11 +3,11 @@
 [English version](README.md)
 
 
-`ytpl`は、コマンドラインで動作するYouTube音楽プレーヤーです。YouTubeから音楽をダウンロードし、ローカルで管理・再生することができます。プレイリスト機能を備えており、お気に入りの曲を整理して再生できます。
+`ytpl`は、コマンドラインで動作するYouTube音楽プレーヤーです。YouTubeから音楽をダウンロードし、ローカルで管理・再生することができます。シンプルなプレイリスト機能を備えており、お気に入りの曲を整理して再生できます。
 
 ## 主な機能
 
-- YouTubeからの音楽ダウンロードと再生
+- YouTubeからの音楽検索、ダウンロード、再生
 - ローカルトラックの管理
 - プレイリストの作成・管理
 - シャッフル再生
@@ -70,60 +70,40 @@ sudo mv ytpl /usr/local/bin/
 # ヘルプを表示
 ytpl --help
 
-# YouTubeで音楽を検索してダウンロード・再生
-ytpl search [query]
-# 例: ytpl search "アーティスト名 曲名"      # アーティストと曲名で検索
-# 例: ytpl search "曲名 カバー"            # カバー曲を検索
-# 例: ytpl search "アーティスト名 アルバム名" # アルバムから検索
-# 例: ytpl search "https://youtube.com/..." # YouTubeのURLから直接再生
-# 例: ytpl search "プレイリスト名"          # プレイリストを検索して再生
-# 例: ytpl search "ライブ 曲名"            # ライブ音源を検索
-# 例: ytpl search "歌ってみた 曲名"         # カバー動画を検索
-
-# ローカルに保存されている楽曲を再生
-ytpl play [query]
-# 例: ytpl play                     # 対話的に楽曲を選択
-# 例: ytpl play "アーティスト名"     # アーティスト名で検索
-# 例: ytpl play "曲名"              # 曲名で検索
-# 例: ytpl play "アルバム名"         # アルバム名で検索
-
-# プレイリストを管理・再生
-ytpl list
-
-# プレイリストを再生
-# ytpl list play <playlist_name>    # 順番に再生
-# ytpl list shuffle <playlist_name> # シャッフル再生
-
-# プレイリストの作成と管理
-# ytpl list make <playlist_name>     # 新規作成
-# ytpl list add <playlist> <track_id> # 追加
-# ytpl list remove <playlist> <track_id> # 削除
-# ytpl list delete <playlist>        # 削除
-
-
-# ローカルの全曲をシャッフル再生
-ytpl shuffle
+# YouTubeで音楽を検索して再生
+ytpl search "検索クエリ"
+# 例: ytpl search "アーティスト名 曲名"
+# 例: ytpl search "曲名 カバー"
+# 例: ytpl search "アーティスト名 アルバム名 曲名"
+# 例: ytpl search "https://www.youtube.com/watch?v=動画ID"
+# YouTubeの検索と同様に、キーワードやURLを自由に入力できます。
 
 # 現在の再生状態を表示
 ytpl status
 
-# 再生コントロール
-ytpl play [query]  # ローカルに保存されている楽曲を再生
-# 例: ytpl play
-# 例: ytpl play "アーティスト名 曲名" #あいまい検索でリスト表示される
+# ローカルに保存済みの曲を再生
+# ytpl play                         # ローカルの曲一覧を表示して対話的に検索・選択して再生
+# ytpl play "検索クエリ"            # 検索して再生
+# 例: ytpl play "アーティスト名"    # アーティスト名で検索して再生
+# 例: ytpl play "曲名"              # 曲名で検索して再生
 
-ytpl pause   # 再生を一時停止
-ytpl resume  # 一時停止から再生を再開
-ytpl stop    # 再生を停止
-ytpl next    # 次の曲にスキップ
-ytpl prev    # 前の曲に戻る
-ytpl volume <0-100>  # 音量を設定 (0-100)
+# 再生を一時停止
+ytpl pause
 
-# ローカルから楽曲を削除
-ytpl delete [query]
+# 再生を再開
+ytpl resume
 
-# バージョン情報を表示
-ytpl --version または ytpl -v
+# 再生を停止
+ytpl stop
+
+# 次の曲にスキップ
+ytpl next
+
+# 前の曲に戻る
+ytpl prev
+
+# ローカルに保存された曲を全てシャッフル再生
+ytpl shuffle
 ```
 
 ### プレイリスト管理
@@ -133,24 +113,26 @@ ytpl --version または ytpl -v
 ytpl list
 
 # 新しいプレイリストを作成
-ytpl list make マイプレイリスト
+ytpl list make playlist
 
 # 現在再生中の曲をプレイリストに追加
 # 指定したプレイリストが存在しない場合は新規作成されます
-ytpl list add マイプレイリスト
+ytpl list add playlist
 
 # 現在再生中の曲をプレイリストから削除
-ytpl list remove マイプレイリスト
+ytpl list remove playlist
 
 # プレイリストを削除
-ytpl list del マイプレイリスト
+ytpl list del playlist
 
+# プレイリストの内容を表示
+ytpl list show playlist
 
 # プレイリストを再生
-ytpl list play マイプレイリスト
+ytpl list play playlist
 
 # プレイリストをシャッフル再生
-ytpl list shuffle マイプレイリスト
+ytpl list shuffle playlist
 ```
 
 ### トラック管理

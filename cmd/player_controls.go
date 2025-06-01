@@ -14,70 +14,70 @@ import (
 
 var pauseCmd = &cobra.Command{
 	Use:   "pause",
-	Short: "pause the currently playing song",
+	Short: "Pause the currently playing song",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
-			fmt.Println("No song is currently playing.")
+			fmt.Println("\n- no song is currently playing.\n")
 			return
 		}
 		if appState.IsPlaying {
 			if err := player.Pause(appState); err != nil {
 				log.Fatalf("error pausing player: %v", err)
 			}
-			fmt.Println("song paused.")
+			fmt.Println("\n- paused.\n")
 		} else {
-			fmt.Println("song is already paused.")
+			fmt.Println("\n- song is already paused.\n")
 		}
 	},
 }
 
 var resumeCmd = &cobra.Command{
 	Use:   "resume",
-	Short: "resume the paused song",
+	Short: "Resume the paused song",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
-			fmt.Println("no song is currently playing or paused.")
+			fmt.Println("\n- no song is currently playing or paused.\n")
 			return
 		}
 		if !appState.IsPlaying {
 			if err := player.Resume(appState); err != nil {
 				log.Fatalf("error resuming player: %v", err)
 			}
-			fmt.Println("song resumed.")
+			fmt.Println("\n- resumed.\n")
 		} else {
-			fmt.Println("song is already playing.")
+			fmt.Println("\n- song is already playing.\n")
 		}
 	},
 }
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "stop the currently playing song",
+	Short: "Stop the currently playing song",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
-			fmt.Println("no song is currently playing.")
+			fmt.Println("\n- no song is currently playing.\n")
 			return
 		}
 		if err := player.StopPlayer(appState); err != nil {
 			log.Fatalf("error stopping player: %v", err)
 		}
-		fmt.Println("song stopped.")
+		fmt.Println("\n- stopped.\n")
 	},
 }
 
 var volCmd = &cobra.Command{
 	Use:   "vol <percentage>",
-	Short: "set playback volume (0-100)",
+	Short: "Set playback volume (0-100)",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
-			fmt.Println("no song is currently playing to set volume.")
+			fmt.Println("\n- no song is currently playing to set volume.\n")
 			return
 		}
 
 		volume, err := strconv.Atoi(args[0])
 		if err != nil {
-			log.Printf("error: invalid volume percentage: %v", err)
+			log.Printf("Error: Invalid volume percentage: %v", err)
 			return
 		}
 
@@ -97,9 +97,9 @@ var volCmd = &cobra.Command{
 		}
 		
 		if adjustedVolume != volume {
-			fmt.Printf("volume set to %d%% (adjusted from %d%%)\n", adjustedVolume, volume)
+			fmt.Printf("\n- volume set to %d%% (adjusted from %d%%)\n\n", adjustedVolume, volume)
 		} else {
-			fmt.Printf("volume set to %d%%\n", adjustedVolume)
+			fmt.Printf("\n- vol: %d%%\n\n", adjustedVolume)
 		}
 	},
 }

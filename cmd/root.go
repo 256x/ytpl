@@ -19,7 +19,7 @@ import (
 )
 
 // Version is the current version of the application.
-const Version = "0.1.2"
+const Version = "0.1.3"
 
 var (
 	cfg      *config.Config
@@ -30,9 +30,9 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "ytpl",
 	Version: Version,
-	Short:   "ytpl is a cli youtube music player",
-	Long: `ytpl is a command-line application designed for searching and playing youtube videos.
-it allows you to manage local music stock and create custom playlists.`,
+	Short:   "ytpl is a CLI YouTube music player",
+	Long: `ytpl is a command-line application designed for searching and playing YouTube videos.
+It allows you to manage local music stock and create custom playlists.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return initConfig()
 	},
@@ -75,8 +75,9 @@ func init() {
 	listCmd.AddCommand(listAddCmd)
 	listCmd.AddCommand(listRemoveCmd)
 	listCmd.AddCommand(listDelCmd)
+	listCmd.AddCommand(listShowCmd)
 	listCmd.AddCommand(listPlayCmd)
-	listCmd.AddCommand(listShuffleCmd) // Subcommand for shuffling a specific playlist
+	listCmd.AddCommand(listShuffleCmd) // NEW: Subcommand for shuffling a specific playlist
 
 	// Setup signal handling for graceful shutdown (e.g., Ctrl+C)
 	c := make(chan os.Signal, 1)
@@ -97,10 +98,10 @@ func init() {
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		log.SetOutput(logFile)
-		log.Printf("--- ytpl starting: %s ---\n", time.Now().Format(time.RFC3339))
-		log.Printf("log file: %s\n", logFilePath)
+		log.Printf("--- ytpl starting: %s ---\n", time.Now().Format(time.RFC3339)) // ログメッセージは大文字のまま
+		log.Printf("Log file: %s\n", logFilePath)
 	} else {
-		fmt.Fprintf(os.Stderr, "warning: failed to open log file %s: %v. logging to stderr.\n", logFilePath, err)
+		fmt.Fprintf(os.Stderr, "WARNING: Failed to open log file %s: %v. Logging to stderr.\n", logFilePath, err)
 	}
 }
 
@@ -110,30 +111,30 @@ func initConfig() error {
 	cfg, err = config.LoadConfig()
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println("config file not found. creating a default config.")
+			log.Println("Config file not found. Creating a default config.")
 			defaultConfigPath, pathErr := config.GetConfigPath()
 			if pathErr != nil {
 				return fmt.Errorf("failed to determine default config path: %w", pathErr)
 			}
-			log.Printf("creating a default config at %s\n", defaultConfigPath)
+			log.Printf("Creating a default config at %s\n", defaultConfigPath)
 			if writeErr := os.MkdirAll(filepath.Dir(defaultConfigPath), 0755); writeErr != nil {
-				return fmt.Errorf("error creating config directory: %w", writeErr)
+				return fmt.Errorf("failed to create config directory: %w", writeErr)
 			}
 			if writeErr := os.WriteFile(defaultConfigPath, []byte(config.GetDefaultConfigContent()), 0644); writeErr != nil {
-				return fmt.Errorf("error writing default config file: %w", writeErr)
+				return fmt.Errorf("failed to write default config file: %w", writeErr)
 			}
 			cfg, err = config.LoadConfig() // Try loading again
 			if err != nil {
-				return fmt.Errorf("error loading config after creating default: %w", err)
+				return fmt.Errorf("failed to load config after creating default: %w", err)
 			}
 		} else {
-			return fmt.Errorf("error loading configuration: %w", err)
+			return fmt.Errorf("failed to load configuration: %w", err)
 		}
 	}
 
 	appState, err = state.LoadState(cfg)
 	if err != nil {
-		log.Printf("error loading application state: %v. starting with empty state.", err)
+		log.Printf("Error loading application state: %v. Starting with empty state.", err)
 		appState = &state.PlayerState{
 			Volume:        cfg.DefaultVolume,
 			IPCSocketPath: cfg.PlayerIPCSocketPath,

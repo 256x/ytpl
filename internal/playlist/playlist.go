@@ -11,10 +11,11 @@ import (
 )
 
 // TrackInfo represents a single entry in a playlist.
-// Must be consistent with yt.TrackInfo for ID and Title.
+// Must be consistent with yt.TrackInfo for ID, Title, and Duration.
 type TrackInfo struct {
-	ID    string
-	Title string
+	ID       string
+	Title    string
+	Duration float64 // Duration in seconds
 }
 
 // Playlist holds a list of tracks.
@@ -32,7 +33,7 @@ var (
 func Init(dir string) {
 	playlistsDir = dir
 	if err := os.MkdirAll(playlistsDir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating playlist directory %s: %v\n", playlistsDir, err)
+		fmt.Fprintf(os.Stderr, "error creating playlist directory %s: %v\n", playlistsDir, err)
 	}
 }
 
@@ -65,14 +66,26 @@ func LoadPlaylist(name string) (*Playlist, error) {
 		if line == "" {
 			continue
 		}
-		parts := strings.SplitN(line, "|", 2)
-		if len(parts) == 2 {
-			p.Tracks = append(p.Tracks, TrackInfo{
+		// Format: ID|Title|Duration
+		parts := strings.Split(line, "|")
+		if len(parts) >= 2 {
+			track := TrackInfo{
 				ID:    parts[0],
 				Title: parts[1],
-			})
+			}
+			// If Duration is available, parse it
+			if len(parts) >= 3 && parts[2] != "" {
+				var duration float64
+				n, err := fmt.Sscanf(parts[2], "%f", &duration)
+				if err == nil && n == 1 {
+					track.Duration = duration
+				} else {
+					fmt.Fprintf(os.Stderr, "warning: failed to parse duration '%s' in playlist %s: %v\n", parts[2], name, err)
+				}
+			}
+			p.Tracks = append(p.Tracks, track)
 		} else {
-			fmt.Fprintf(os.Stderr, "Warning: Malformed line in playlist %s: %s\n", name, line)
+			fmt.Fprintf(os.Stderr, "warning: malformed line in playlist %s: %s\n", name, line)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -89,7 +102,8 @@ func SavePlaylist(p *Playlist) error {
 	filePath := getPlaylistFilePath(p.Name)
 	var sb strings.Builder
 	for _, track := range p.Tracks {
-		sb.WriteString(fmt.Sprintf("%s|%s\n", track.ID, track.Title))
+		// Format: ID|Title|Duration
+		sb.WriteString(fmt.Sprintf("%s|%s|%f\n", track.ID, track.Title, track.Duration))
 	}
 
 	return os.WriteFile(filePath, []byte(sb.String()), 0644)

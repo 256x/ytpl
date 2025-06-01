@@ -126,7 +126,7 @@ func StopSpinner(stopCh chan struct{}) {
 	fmt.Print("\r\033[K")               // Clear the line after spinner
 }
 
-// FormatDuration converts seconds to [HH:MM:SS] format.
+// FormatDuration converts seconds to a clean MM:SS or HH:MM:SS format
 func FormatDuration(seconds float64) string {
 	total := int(seconds)
 	hours := total / 3600
@@ -134,7 +134,7 @@ func FormatDuration(seconds float64) string {
 	secs := total % 60
 
 	if hours > 0 {
-		return fmt.Sprintf("[%02d:%02d:%02d]", hours, minutes, secs)
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, secs)
 	}
-	return fmt.Sprintf("[00:%02d:%02d]", minutes, secs)
+	return fmt.Sprintf("%d:%02d", minutes, secs)
 }

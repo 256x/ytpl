@@ -14,13 +14,13 @@ import (
 	"ytpl/internal/util"
 	"ytpl/internal/yt"
 
-	fuzzyfinder "github.com/koki-develop/go-fzf"
 	"github.com/spf13/cobra"
+	fuzzyfinder "github.com/koki-develop/go-fzf"
 )
 
 var playCmd = &cobra.Command{
 	Use:   "play [query]",
-	Short: "play a locally stocked song",
+	Short: "Play a locally stocked song",
 	Args:  cobra.MaximumNArgs(1), // Optional query for filtering
 	Run: func(cmd *cobra.Command, args []string) {
 		filterQuery := ""
@@ -56,7 +56,7 @@ var playCmd = &cobra.Command{
 				// Fetch MP3 tags
 				audioInfo, readTagErr := playertags.ReadTagsFromMP3(trackPath, "", "") // No initial fallbacks for tags
 				if readTagErr != nil {
-					log.Printf("warning: failed to read mp3 tags for %s: %v.\n", file.Name(), readTagErr)
+					log.Printf("warning: failed to read MP3 tags for %s: %v.\n", file.Name(), readTagErr)
 				}
 
 				// --- NEW: Determine the best display title based on priority ---
@@ -88,9 +88,10 @@ var playCmd = &cobra.Command{
 					filterArtist = ytTrackInfo.Uploader
 				}
 
+
 				if filterQuery == "" ||
 					strings.Contains(strings.ToLower(currentDisplayTitle), filterQuery) || // Filter by best display title
-					strings.Contains(strings.ToLower(filterArtist), filterQuery) || // Filter by artist (best available)
+					strings.Contains(strings.ToLower(filterArtist), filterQuery) ||        // Filter by artist (best available)
 					strings.Contains(strings.ToLower(ytTrackInfoForID.ID), filterQuery) { // Filter by YouTube ID
 
 					selectablePaths = append(selectablePaths, struct {
@@ -105,9 +106,9 @@ var playCmd = &cobra.Command{
 
 		if len(selectablePaths) == 0 {
 			if filterQuery != "" {
-				fmt.Printf("no local songs found matching \"%s\".\n", filterQuery)
+				fmt.Printf("\n- no local songs found matching \"%s\".\n", filterQuery)
 			} else {
-				fmt.Println("no local songs found. use 'ytpl search' to download some.")
+				fmt.Println("\n- no local songs found. use 'ytpl search' to download some.\n")
 			}
 			return
 		}
@@ -146,9 +147,9 @@ var playCmd = &cobra.Command{
 		}
 
 		// Initialize fzf
-		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ play from stock ] > "))
+		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ play ] "))
 		if err != nil {
-			log.Fatalf("error initializing fzf: %v", err)
+			log.Fatalf("Error initializing fzf: %v", err)
 		}
 
 		// Show fzf prompt
@@ -160,10 +161,10 @@ var playCmd = &cobra.Command{
 		)
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
-				fmt.Println("selection cancelled.")
+				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
-			log.Fatalf("error running fzf: %v", err)
+			log.Fatalf("Error running fzf: %v", err)
 		}
 
 		// Get the selected track
@@ -173,7 +174,7 @@ var playCmd = &cobra.Command{
 		selectedItem := displayItems[idxs[0]]
 		if err != nil {
 			if strings.Contains(err.Error(), "cancelled") {
-				fmt.Println("selection cancelled.")
+				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
 			log.Fatalf("error selecting track: %v", err)
@@ -185,6 +186,7 @@ var playCmd = &cobra.Command{
 
 		appState.CurrentTrackID = selectedItem.Info.ID
 		appState.CurrentTrackTitle = selectedItem.DisplayTitle // Store the selected display title
+		appState.CurrentTrackDuration = selectedItem.Info.Duration
 		appState.DownloadedFilePath = selectedItem.Path
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = ""

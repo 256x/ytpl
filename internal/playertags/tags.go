@@ -36,10 +36,10 @@ func ReadTagsFromMP3(filePath string, fallbackTitle, fallbackArtist string) (*Au
 		}
 		// Final fallback for empty info
 		if info.Title == "" {
-			info.Title = "Unknown Title"
+			info.Title = "unknown title"
 		}
 		if info.Artist == "" {
-			info.Artist = "Unknown Artist"
+			info.Artist = "unknown artist"
 		}
 		return info, fmt.Errorf("failed to read tags from %s: %w", filePath, err) // Return error but provide fallback info
 	}
@@ -55,13 +55,13 @@ func ReadTagsFromMP3(filePath string, fallbackTitle, fallbackArtist string) (*Au
 	if info.Title == "" {
 		info.Title = fallbackTitle
 		if info.Title == "" { // If fallback title is also empty
-			info.Title = "Unknown Title"
+			info.Title = "unknown title"
 		}
 	}
 	if info.Artist == "" {
 		info.Artist = fallbackArtist
 		if info.Artist == "" { // If fallback artist is also empty
-			info.Artist = "Unknown Artist"
+			info.Artist = "unknown artist"
 		}
 	}
 

@@ -19,7 +19,7 @@ import (
 
 var shuffleCmd = &cobra.Command{
 	Use:   "shuffle",
-	Short: "shuffle and play all local stocked songs",
+	Short: "Shuffle and play all local stocked songs",
 	Run: func(cmd *cobra.Command, args []string) {
 		rand.Seed(time.Now().UnixNano()) // Initialize random seed for different results each run
 
@@ -42,7 +42,7 @@ var shuffleCmd = &cobra.Command{
 
 				trackInfo, err := yt.GetLocalTrackInfo(cfg, id)
 				if err != nil {
-					// fallback if info.json is missing or corrupted
+					// Fallback if info.json is missing or corrupted
 					trackInfo = &yt.TrackInfo{ID: id, Title: strings.TrimSuffix(file.Name(), ".mp3")}
 					fmt.Fprintf(os.Stderr, "warning: could not read info.json for %s: %v. using filename as title.\n", file.Name(), err)
 				}
@@ -52,7 +52,7 @@ var shuffleCmd = &cobra.Command{
 		}
 
 		if len(filePaths) == 0 {
-			fmt.Println("no local songs to shuffle. use 'ytpl search' to download some.")
+			fmt.Println("\n- no local songs to shuffle. use 'ytpl search' to download some.\n")
 			return
 		}
 
@@ -73,7 +73,7 @@ var shuffleCmd = &cobra.Command{
 		appState.CurrentTrackTitle = firstTrack.Title // Will be formatted by status/next/prev display
 		appState.DownloadedFilePath = filePaths[0]
 		appState.IsPlaying = true
-		appState.CurrentPlaylist = "All Songs (Shuffled)" // Special name for global shuffled playlist
+		appState.CurrentPlaylist = "all songs (shuffled)" // Special name for global shuffled playlist
 		appState.LastPlayedTrackIndex = 0
 
 		if err := state.SaveState(); err != nil {

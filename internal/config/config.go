@@ -46,7 +46,7 @@ func LoadConfig() (*Config, error) {
 		if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("failed to decode config file %s: %w", configPath, err)
 		}
-		log.Printf("Config file not found at %s. Using default settings.", configPath)
+		log.Printf("config file not found at %s. using default settings.", configPath)
 	}
 
 	// Expand environment variables for all user-configurable paths
@@ -62,7 +62,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.DownloadDir == "" {
 		dataDir, err := xdg.DataFile(filepath.Join(appName, "stock"))
 		if err != nil {
-			log.Printf("Warning: Could not determine default download directory based on XDG. Using temp dir as fallback: %v", err)
+			log.Printf("warning: could not determine default download directory based on xdg. using temp dir as fallback: %v", err)
 			cfg.DownloadDir = filepath.Join(os.TempDir(), appName, "stock")
 		} else {
 			cfg.DownloadDir = dataDir
@@ -87,7 +87,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.PlaylistDir == "" {
 		playlistDefaultDir, err := xdg.DataFile(filepath.Join(appName, "playlists"))
 		if err != nil {
-			log.Printf("Warning: Could not determine default playlist directory based on XDG. Using temp dir as fallback: %v", err)
+			log.Printf("warning: could not determine default playlist directory based on xdg. using temp dir as fallback: %v", err)
 			cfg.PlaylistDir = filepath.Join(os.TempDir(), appName, "playlists")
 		} else {
 			cfg.PlaylistDir = playlistDefaultDir
@@ -118,7 +118,7 @@ func LoadConfig() (*Config, error) {
 
 	if !filepath.IsAbs(cfg.PlayerIPCSocketPath) || !strings.HasPrefix(filepath.Clean(cfg.PlayerIPCSocketPath), filepath.Clean(os.TempDir())) {
 		if err := os.MkdirAll(filepath.Dir(cfg.PlayerIPCSocketPath), 0755); err != nil {
-			log.Printf("Warning: Could not create directory for player IPC socket %s: %v", filepath.Dir(cfg.PlayerIPCSocketPath), err)
+			log.Printf("warning: could not create directory for player ipc socket %s: %v", filepath.Dir(cfg.PlayerIPCSocketPath), err)
 		}
 	}
 

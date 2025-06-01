@@ -18,12 +18,12 @@ import (
 
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
-	Short: "search youtube for music",
+	Short: "Search YouTube for music",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		query := strings.Join(args, " ")
 		// Show searching spinner with query
-		searchSpinner := util.StartSpinner(fmt.Sprintf("Searching '%s'...", query))
+		searchSpinner := util.StartSpinner(fmt.Sprintf("- searching '%s'...", query))
 		tracks, err := yt.SearchYouTube(cfg, query)
 		util.StopSpinner(searchSpinner)
 		if err != nil {
@@ -31,7 +31,7 @@ var searchCmd = &cobra.Command{
 		}
 
 		if len(tracks) == 0 {
-			fmt.Println("no results found.")
+			fmt.Println("\n- no results found.\n")
 			return
 		}
 
@@ -51,10 +51,10 @@ var searchCmd = &cobra.Command{
 				return fmt.Sprintf("%s:[%s] - %s", indexStr, durationStr, tracks[i].Title)
 			},
 		)
-		
+
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
-				fmt.Println("search cancelled.")
+				fmt.Println("\n- search cancelled.\n")
 				return
 			}
 			log.Fatalf("error running fzf: %v", err)
@@ -81,7 +81,7 @@ var searchCmd = &cobra.Command{
 			finalTrackInfo.Title = selectedTrack.Title
 		} else {
 			// Download the track if not found locally
-			downloadSpinner := util.StartSpinner(fmt.Sprintf("Downloading '%s'...", selectedTrack.Title))
+			downloadSpinner := util.StartSpinner(fmt.Sprintf("- downloading '%s'...", selectedTrack.Title))
 			downloadedFilePath, finalTrackInfo, err = yt.DownloadTrack(cfg, selectedTrack.ID)
 			util.StopSpinner(downloadSpinner)
 
@@ -101,7 +101,7 @@ var searchCmd = &cobra.Command{
 		appState.CurrentPlaylist = ""
 
 		if err := state.SaveState(); err != nil {
-			log.Printf("error saving state: %v", err)
+			log.Printf("\n- error saving state: %v\n", err)
 		}
 
 		// Show status after starting player
