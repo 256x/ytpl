@@ -48,7 +48,7 @@ func ShowStatus() {
 	}
 
 	if appState.PID == 0 {
-		fmt.Println("[ No track playing ]")
+		fmt.Println("\n- no track playing (mpv might have exited).\n")
 		atomic.StoreInt32(&isFirstOutput, 0)
 		return
 	}
@@ -59,29 +59,12 @@ func ShowStatus() {
 
 	// Re-check appState.PID after update, as it might have become 0 if mpv exited
 	if appState.PID == 0 {
-		fmt.Println("[ No track playing (MPV might have exited) ]")
+		fmt.Println("\n- no track playing (mpv might have exited).\n")
 		return
 	}
 
 	// Get the best available display title
 	currentDisplayTitle := getBestAvailableTitle()
-
-	// Get playback information
-	playbackTime, err := player.GetProperty(appState, "playback-time")
-	currentTimeStr := "00:00"
-	if err == nil {
-		if pt, ok := playbackTime.(float64); ok {
-			currentTimeStr = formatDuration(int(pt))
-		}
-	}
-
-	duration, err := player.GetProperty(appState, "duration")
-	durationStr := "00:00"
-	if err == nil {
-		if dur, ok := duration.(float64); ok {
-			durationStr = formatDuration(int(dur))
-		}
-	}
 
 	// Get volume
 	volume, _ := player.GetProperty(appState, "volume")
@@ -91,7 +74,7 @@ func ShowStatus() {
 	}
 
 	// Build the status line
-	statusLine := fmt.Sprintf("[ %s", currentDisplayTitle)
+	statusLine := fmt.Sprintf("\n♪  %s", currentDisplayTitle)
 
 	// Add playlist info if available
 	if appState.CurrentPlaylist != "" {
@@ -99,7 +82,7 @@ func ShowStatus() {
 	}
 
 	// Add time and volume info
-	statusLine += fmt.Sprintf(" - %s/%s volume: %d%% ]", currentTimeStr, durationStr, volumePercent)
+	statusLine += fmt.Sprintf(" | 🔊 %d%%\n", volumePercent)
 
 	// Print the status line with a newline after it
 	fmt.Printf("%s\n", statusLine)

@@ -30,7 +30,7 @@ var playCmd = &cobra.Command{
 
 		files, err := os.ReadDir(cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("Error reading download directory %s: %v", cfg.DownloadDir, err)
+			log.Fatalf("error reading download directory %s: %v", cfg.DownloadDir, err)
 		}
 
 		var selectablePaths []struct { // Struct to hold info and path for selection
@@ -56,7 +56,7 @@ var playCmd = &cobra.Command{
 				// Fetch MP3 tags
 				audioInfo, readTagErr := playertags.ReadTagsFromMP3(trackPath, "", "") // No initial fallbacks for tags
 				if readTagErr != nil {
-					log.Printf("Warning: Failed to read MP3 tags for %s: %v.\n", file.Name(), readTagErr)
+					log.Printf("warning: failed to read MP3 tags for %s: %v.\n", file.Name(), readTagErr)
 				}
 
 				// --- NEW: Determine the best display title based on priority ---
@@ -106,9 +106,9 @@ var playCmd = &cobra.Command{
 
 		if len(selectablePaths) == 0 {
 			if filterQuery != "" {
-				fmt.Printf("No local songs found matching \"%s\".\n", filterQuery)
+				fmt.Printf("\n- no local songs found matching \"%s\".\n", filterQuery)
 			} else {
-				fmt.Println("No local songs found. Use 'ytpl search' to download some.")
+				fmt.Println("\n- no local songs found. use 'ytpl search' to download some.\n")
 			}
 			return
 		}
@@ -147,7 +147,7 @@ var playCmd = &cobra.Command{
 		}
 
 		// Initialize fzf
-		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("Select a local song to play > "))
+		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ play ] "))
 		if err != nil {
 			log.Fatalf("Error initializing fzf: %v", err)
 		}
@@ -161,7 +161,7 @@ var playCmd = &cobra.Command{
 		)
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
-				fmt.Println("Selection cancelled.")
+				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
 			log.Fatalf("Error running fzf: %v", err)
@@ -169,28 +169,29 @@ var playCmd = &cobra.Command{
 
 		// Get the selected track
 		if len(idxs) == 0 {
-			log.Fatalf("No track selected")
+			log.Fatalf("no track selected")
 		}
 		selectedItem := displayItems[idxs[0]]
 		if err != nil {
 			if strings.Contains(err.Error(), "cancelled") {
-				fmt.Println("Selection cancelled.")
+				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
-			log.Fatalf("Error selecting track: %v", err)
+			log.Fatalf("error selecting track: %v", err)
 		}
 
 		if err := player.StartPlayer(cfg, appState, selectedItem.Path); err != nil {
-			log.Fatalf("Error starting player: %v", err)
+			log.Fatalf("error starting player: %v", err)
 		}
 
 		appState.CurrentTrackID = selectedItem.Info.ID
 		appState.CurrentTrackTitle = selectedItem.DisplayTitle // Store the selected display title
+		appState.CurrentTrackDuration = selectedItem.Info.Duration
 		appState.DownloadedFilePath = selectedItem.Path
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = ""
 		if err := state.SaveState(); err != nil {
-			log.Printf("Error saving state: %v", err)
+			log.Printf("error saving state: %v", err)
 		}
 
 		// Show the status in the same format as the status command

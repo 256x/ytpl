@@ -19,7 +19,7 @@ import (
 )
 
 // Version is the current version of the application.
-const Version = "0.1.2"
+const Version = "0.1.3"
 
 var (
 	cfg      *config.Config
@@ -84,10 +84,10 @@ func init() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.Println("Received interrupt signal. Shutting down ytpl...")
+		log.Println("received interrupt signal. shutting down ytpl...")
 		if appState != nil && appState.PID != 0 {
 			if err := player.StopPlayer(appState); err != nil {
-				log.Printf("Error stopping player on shutdown: %v", err)
+				log.Printf("error stopping player on shutdown: %v", err)
 			}
 		}
 		os.Exit(0)
@@ -98,7 +98,7 @@ func init() {
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		log.SetOutput(logFile)
-		log.Printf("--- ytpl starting: %s ---\n", time.Now().Format(time.RFC3339))
+		log.Printf("--- ytpl starting: %s ---\n", time.Now().Format(time.RFC3339)) // ログメッセージは大文字のまま
 		log.Printf("Log file: %s\n", logFilePath)
 	} else {
 		fmt.Fprintf(os.Stderr, "WARNING: Failed to open log file %s: %v. Logging to stderr.\n", logFilePath, err)

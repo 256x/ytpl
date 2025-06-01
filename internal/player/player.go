@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -34,9 +35,9 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 	// If player is already running, stop it first.
 	// This ensures only one mpv instance is controlled by ytpl for single playback.
 	if s.PID != 0 {
-		log.Printf("Player already running (PID: %d). Stopping it first...", s.PID) // Changed to log.Printf
+		log.Printf("player already running (pid: %d). stopping it first...", s.PID)
 		if err := StopPlayer(s); err != nil {
-			log.Printf("Warning: Could not stop existing player: %v", err) // Changed to log.Printf
+			log.Printf("warning: could not stop existing player: %v", err)
 			// Continue, as the old process might be gone already
 		}
 	}
@@ -49,7 +50,7 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 
 	// Ensure the socket directory exists
 	if err := os.MkdirAll(filepath.Dir(cfg.PlayerIPCSocketPath), 0755); err != nil {
-		return fmt.Errorf("failed to create IPC socket directory %s: %w", filepath.Dir(cfg.PlayerIPCSocketPath), err)
+		return fmt.Errorf("failed to create ipc socket directory %s: %w", filepath.Dir(cfg.PlayerIPCSocketPath), err)
 	}
 	// Remove old socket file if it exists, to prevent "address already in use" errors
 	os.Remove(cfg.PlayerIPCSocketPath)
@@ -87,7 +88,7 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 	// Verify socket is created and reachable
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second)
 	if err != nil {
-		log.Printf("Warning: mpv IPC socket not ready or failed to connect: %v", err) // <-- Changed to log.Printf
+		log.Printf("warning: mpv ipc socket not ready or failed to connect: %v", err)
 		// Optionally, kill the mpv process if socket connection fails consistently
 	} else {
 		conn.Close()
@@ -96,17 +97,17 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 	return nil
 }
 
-// SendCommand sends an IPC command to mpv.
+// SendCommand sends an ipc command to mpv.
 func SendCommand(s *state.PlayerState, command []interface{}) error {
 	if s.PID == 0 || s.IPCSocketPath == "" {
-		return fmt.Errorf("player is not running or IPC socket path is unknown")
+		return fmt.Errorf("player is not running or ipc socket path is unknown")
 	}
 
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 1*time.Second)
 	if err != nil {
-		// Log this warning to the file, not console, to keep TUI clean.
-		log.Printf("Warning: Failed to connect to mpv IPC socket (PID %d): %v. Assuming player is no longer running.\n", s.PID, err) // <-- Changed to log.Printf
-		s.PID = 0 // Clear PID if connection fails
+		// Log this warning to the file, not console, to keep tui clean.
+		log.Printf("warning: failed to connect to mpv ipc socket (pid %d): %v. assuming player is no longer running.\n", s.PID, err)
+		s.PID = 0 // Clear pid if connection fails
 		state.SaveState() // Save updated state
 		return fmt.Errorf("player not reachable, possibly stopped")
 	}
@@ -114,7 +115,7 @@ func SendCommand(s *state.PlayerState, command []interface{}) error {
 
 	ipcCmd := IPCCommand{Command: command}
 	encoder := json.NewEncoder(conn)
-	// Add newline delimiter for mpv IPC
+	// Add newline delimiter for mpv ipc
 	if err := encoder.Encode(ipcCmd); err != nil {
 		return fmt.Errorf("failed to send command to mpv: %w", err)
 	}
@@ -125,12 +126,12 @@ func SendCommand(s *state.PlayerState, command []interface{}) error {
 // GetProperty fetches a property value from mpv.
 func GetProperty(s *state.PlayerState, property string) (interface{}, error) {
 	if s.PID == 0 || s.IPCSocketPath == "" {
-		return nil, fmt.Errorf("player is not running or IPC socket path is unknown")
+		return nil, fmt.Errorf("player is not running or ipc socket path is unknown")
 	}
 
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 1*time.Second)
 	if err != nil {
-		log.Printf("Warning: Failed to connect to mpv IPC socket (PID %d) for property '%s': %v. Assuming player is no longer running.\n", s.PID, property, err) // <-- Changed to log.Printf
+		log.Printf("warning: failed to connect to mpv ipc socket (pid %d) for property '%s': %v. assuming player is no longer running.\n", s.PID, property, err)
 		s.PID = 0
 		state.SaveState()
 		return nil, fmt.Errorf("player not reachable, possibly stopped")
@@ -150,7 +151,7 @@ func GetProperty(s *state.PlayerState, property string) (interface{}, error) {
 	}
 
 	if resp.Error != "success" {
-		return nil, fmt.Errorf("mpv returned error for property '%s': %s", property, resp.Error)
+		return nil, fmt.Errorf("mpv returned error for property '%s': %s", property, strings.ToLower(resp.Error))
 	}
 
 	return resp.Data, nil
@@ -160,7 +161,7 @@ func GetProperty(s *state.PlayerState, property string) (interface{}, error) {
 // Returns filePath, playlistPosition, error.
 func GetCurrentlyPlayingTrackInfo(s *state.PlayerState) (string, int, error) {
 	if s.PID == 0 || s.IPCSocketPath == "" {
-		return "", -1, fmt.Errorf("player is not running or IPC socket path is unknown")
+		return "", -1, fmt.Errorf("player is not running or ipc socket path is unknown")
 	}
 
 	// Get current file path
@@ -177,10 +178,10 @@ func GetCurrentlyPlayingTrackInfo(s *state.PlayerState) (string, int, error) {
 	playlistPos, err := GetProperty(s, "playlist-pos") // "playlist-pos" gives 0-indexed position
 	if err != nil {
 		// This might fail if not playing from a playlist, so log and default
-		log.Printf("Warning: Could not get 'playlist-pos' from mpv: %v", err)
+		log.Printf("warning: could not get 'playlist-pos' from mpv: %v", err)
 		return filePathStr, -1, nil // Return file path, but -1 for position
 	}
-	playlistPosInt, ok := playlistPos.(float64) // mpv returns numbers as float64 via JSON IPC
+	playlistPosInt, ok := playlistPos.(float64) // mpv returns numbers as float64 via json ipc
 	if !ok {
 		return filePathStr, -1, fmt.Errorf("mpv 'playlist-pos' property is not a number: %v", playlistPos)
 	}
@@ -192,41 +193,41 @@ func GetCurrentlyPlayingTrackInfo(s *state.PlayerState) (string, int, error) {
 // StopPlayer sends a quit command to mpv and cleans up state.
 func StopPlayer(s *state.PlayerState) error {
 	if s.PID == 0 {
-		fmt.Println("Player is not running.") // <-- This remains as console output
+		log.Printf("player is not running.")
 		return nil
 	}
 
 	err := SendCommand(s, []interface{}{"quit"})
 	if err != nil {
-		log.Printf("Warning: Failed to send quit command to mpv via IPC (PID %d): %v. Trying to kill process...", s.PID, err) // <-- Changed to log.Printf
+		log.Printf("warning: failed to send quit command to mpv via ipc (pid %d): %v. trying to kill process...", s.PID, err)
 
 		// FindProcess(s.PID) should only be called if s.PID is valid
 		process, procErr := os.FindProcess(s.PID)
 		if procErr != nil {
-			log.Printf("Error: Could not find mpv process with PID %d: %v. It might have already exited.", s.PID, procErr) // <-- Changed to log.Printf
+			log.Printf("error: could not find mpv process with pid %d: %v. it might have already exited.", s.PID, procErr)
 			// Process might already be gone, just clean up state.
 		} else {
 			// Check if process is still alive before killing
 			// On Unix, signal 0 can be used to check if a process exists
 			if process.Signal(syscall.Signal(0)) == nil { // Check if process exists (Unix-like)
 				if killErr := process.Kill(); killErr != nil {
-					return fmt.Errorf("failed to kill mpv process with PID %d: %w", s.PID, killErr)
+					return fmt.Errorf("failed to kill mpv process with pid %d: %w", s.PID, killErr)
 				}
-				log.Printf("Killed mpv process with PID %d.", s.PID) // <-- Changed to log.Printf
+				log.Printf("killed mpv process with pid %d.", s.PID)
 			} else {
-				log.Printf("mpv process with PID %d already exited.", s.PID) // <-- Changed to log.Printf
+				log.Printf("mpv process with pid %d already exited.", s.PID)
 			}
 		}
 	} else {
-		// IPC quit command sent successfully, give mpv a moment to shut down gracefully
+		// Ipc quit command sent successfully, give mpv a moment to shut down gracefully
 		time.Sleep(200 * time.Millisecond)
-		log.Printf("Sent quit command to mpv (PID %d).", s.PID) // <-- Changed to log.Printf
+		log.Printf("sent quit command to mpv (pid %d).", s.PID)
 	}
 
 	// Clean up socket file
 	if s.IPCSocketPath != "" {
 		os.Remove(s.IPCSocketPath)
-		log.Printf("Removed IPC socket file: %s", s.IPCSocketPath) // <-- Changed to log.Printf
+		log.Printf("removed ipc socket file: %s", s.IPCSocketPath)
 	}
 
 	// Clear player state AFTER attempting to stop process and clean up socket
@@ -248,7 +249,7 @@ func StopPlayer(s *state.PlayerState) error {
 // This is used for single track playback or manually switching.
 func LoadFile(s *state.PlayerState, filePath string) error {
 	if s.PID == 0 {
-		return fmt.Errorf("player is not running. Cannot load file.")
+		return fmt.Errorf("player is not running. cannot load file.")
 	}
 	return SendCommand(s, []interface{}{"loadfile", filePath, "replace"})
 }
@@ -272,9 +273,9 @@ func LoadPlaylistIntoPlayer(cfg *config.Config, s *state.PlayerState, filePaths 
 
 	// If player is already running, stop it first (to clear old playlist/state)
 	if s.PID != 0 {
-		log.Printf("Player already running (PID: %d). Stopping it to load new playlist...", s.PID) // <-- Changed to log.Printf
+		log.Printf("player already running (pid: %d). stopping it to load new playlist...", s.PID)
 		if err := StopPlayer(s); err != nil {
-			log.Printf("Warning: Could not stop existing player: %v", err) // <-- Changed to log.Printf
+			log.Printf("warning: could not stop existing player: %v", err)
 		}
 	}
 
@@ -286,7 +287,7 @@ func LoadPlaylistIntoPlayer(cfg *config.Config, s *state.PlayerState, filePaths 
 
 	// Ensure socket directory exists and remove old socket
 	if err := os.MkdirAll(filepath.Dir(cfg.PlayerIPCSocketPath), 0755); err != nil {
-		return fmt.Errorf("failed to create IPC socket directory %s: %w", filepath.Dir(cfg.PlayerIPCSocketPath), err)
+		return fmt.Errorf("failed to create ipc socket directory %s: %w", filepath.Dir(cfg.PlayerIPCSocketPath), err)
 	}
 	os.Remove(cfg.PlayerIPCSocketPath)
 
@@ -333,7 +334,7 @@ func LoadPlaylistIntoPlayer(cfg *config.Config, s *state.PlayerState, filePaths 
 	// Verify socket is created and reachable
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second)
 	if err != nil {
-		log.Printf("Warning: mpv IPC socket not ready or failed to connect after playlist load: %v\n", err) // <-- Changed to log.Printf
+		log.Printf("warning: mpv ipc socket not ready or failed to connect after playlist load: %v\n", err)
 		// Optionally, kill the mpv process if socket connection fails consistently
 	} else {
 		conn.Close()

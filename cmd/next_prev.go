@@ -23,7 +23,7 @@ var nextCmd = &cobra.Command{
 			return
 		}
 		if appState.CurrentPlaylist == "" && len(appState.ShuffleQueue) == 0 {
-			fmt.Println("No active playlist or shuffle queue to advance.")
+			fmt.Println("\n- no active playlist or shuffle queue to advance.\n")
 			return
 		}
 
@@ -41,7 +41,7 @@ var nextCmd = &cobra.Command{
 
 				nextFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", nextTrackID))
 				if _, err := os.Stat(nextFilePath); os.IsNotExist(err) {
-					fmt.Printf("Warning: Next shuffled track \"%s\" is not locally stocked. Skipping.\n", nextTrackID) // Use ID as fallback here
+					fmt.Printf("\n- warning: next shuffled track \"%s\" is not locally stocked. skipping.\n", nextTrackID) // Use ID as fallback here
 					return
 				}
 
@@ -60,12 +60,12 @@ var nextCmd = &cobra.Command{
 				time.Sleep(200 * time.Millisecond) // Short delay to allow mpv to update state
 				// No direct display here. statusCmd.Run() will handle it.
 			} else {
-				fmt.Println("End of shuffle queue. No more songs.")
+				fmt.Println("\n- end of shuffle queue. no more songs.")
 				player.StopPlayer(appState) // Stop player at end of queue
 				return
 			}
 		} else {
-			fmt.Println("No next song available.")
+			fmt.Println("\n- no next song available.\n")
 			return
 		}
 		statusCmd.Run(statusCmd, []string{}) // Call status command
@@ -77,11 +77,11 @@ var prevCmd = &cobra.Command{
 	Short: "Play the previous song in the current playlist or shuffled queue",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
-			fmt.Println("Player is not running.")
+			fmt.Println("\n- player is not running.\n")
 			return
 		}
 		if appState.CurrentPlaylist == "" && len(appState.ShuffleQueue) == 0 {
-			fmt.Println("No active playlist or shuffle queue to go back.")
+			fmt.Println("\n- no active playlist or shuffle queue to go back.\n")
 			return
 		}
 
@@ -99,7 +99,7 @@ var prevCmd = &cobra.Command{
 
 				prevFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", prevTrackID))
 				if _, err := os.Stat(prevFilePath); os.IsNotExist(err) {
-					fmt.Printf("Warning: Previous shuffled track \"%s\" is not locally stocked. Skipping.\n", prevTrackID) // Use ID as fallback
+					fmt.Printf("\n- warning: previous shuffled track \"%s\" is not locally stocked. skipping.\n", prevTrackID) // Use ID as fallback
 					return
 				}
 
@@ -117,11 +117,11 @@ var prevCmd = &cobra.Command{
 				time.Sleep(200 * time.Millisecond) // Short delay
 				// No direct display here. statusCmd.Run() will handle it.
 			} else {
-				fmt.Println("Beginning of shuffle queue. No previous songs.")
+				fmt.Println("\n- beginning of shuffle queue. no previous songs.\n")
 				return
 			}
 		} else {
-			fmt.Println("No previous song available.")
+			fmt.Println("\n- no previous song available.\n")
 		}
 		statusCmd.Run(statusCmd, []string{}) // Call status command
 	},

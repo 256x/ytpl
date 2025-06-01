@@ -50,8 +50,8 @@ var delCmd = &cobra.Command{
 		}
 
 		// Show warning message
-		fmt.Println(util.Red("⚠️  WARNING: This will permanently delete the selected track(s)"))
-		fmt.Println(util.Yellow("   Select a track to delete (Ctrl+C to cancel):"))
+		fmt.Println(util.Red("⚠️  warning: this will permanently delete the selected track."))
+		fmt.Println(util.Yellow("   select a track to delete (ctrl+c to cancel):"))
 		fmt.Println()
 
 		// Initialize fzf
@@ -95,27 +95,27 @@ var delCmd = &cobra.Command{
 
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
-				fmt.Println(util.Yellow("Deletion cancelled"))
+				fmt.Println(util.Yellow("\n- deletion cancelled\n"))
 				return
 			}
 			log.Fatalf(util.Error("Error selecting track: %v"), err)
 		}
 
 		if len(idxs) == 0 {
-			fmt.Println(util.Yellow("No track selected"))
+			fmt.Println(util.Yellow("\n- no track selected\n"))
 			return
 		}
 
 		selected := selectableTracks[idxs[0]]
 
 		// Show confirmation
-		confirmMsg := fmt.Sprintf("Are you sure you want to delete '%s'? (y/N) ", selected.Title)
+		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? (y/N) ", selected.Title)
 		confirmed, err := util.Confirm(confirmMsg)
 		if err != nil {
 			log.Fatalf("Error getting confirmation: %v", err)
 		}
 		if !confirmed {
-			fmt.Println("Deletion cancelled.")
+			fmt.Println("\n- deletion cancelled\n")
 			return
 		}
 
@@ -123,19 +123,19 @@ var delCmd = &cobra.Command{
 		var removedFromPlaylists []string
 		playlists, err := playlist.ListAllPlaylists()
 		if err != nil {
-			log.Printf("Warning: failed to list playlists: %v", err)
+			log.Printf("warning: failed to list playlists: %v", err)
 		} else {
 			for _, plName := range playlists {
 				err := playlist.RemoveTrack(plName, selected.ID)
 				if err != nil && !strings.Contains(err.Error(), "not found") {
-					log.Printf("Warning: failed to remove track from playlist %s: %v", plName, err)
+					log.Printf("warning: failed to remove track from playlist %s: %v", plName, err)
 				} else if err == nil {
 					removedFromPlaylists = append(removedFromPlaylists, plName)
 				}
 			}
 
 			if len(removedFromPlaylists) > 0 {
-				fmt.Println(util.Green("✓ Removed from playlists:"))
+				fmt.Println(util.Green("\n- removed from playlists:"))
 				for _, plName := range removedFromPlaylists {
 					fmt.Printf("  - %s\n", plName)
 				}
@@ -153,7 +153,7 @@ var delCmd = &cobra.Command{
 		for _, file := range filesToDelete {
 			if _, err := os.Stat(file); err == nil {
 				if err := os.Remove(file); err != nil {
-					log.Printf("Error deleting %s: %v", file, err)
+					log.Printf("error deleting %s: %v", file, err)
 				} else {
 					deletedFiles = append(deletedFiles, file)
 				}
@@ -165,7 +165,7 @@ var delCmd = &cobra.Command{
 
 		// Show result
 		if len(deletedFiles) > 0 {
-			fmt.Println(util.Green("Successfully deleted:"))
+			fmt.Println(util.Green("\n- deleted:"))
 			for _, file := range deletedFiles {
 				fmt.Printf("  - %s\n", filepath.Base(file))
 			}

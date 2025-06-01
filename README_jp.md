@@ -3,11 +3,11 @@
 [English version](README.md)
 
 
-`ytpl`は、コマンドラインで動作するYouTube音楽プレーヤーです。YouTubeから音楽をダウンロードし、ローカルで管理・再生することができます。プレイリスト機能を備えており、お気に入りの曲を整理して再生できます。
+`ytpl`は、コマンドラインで動作するYouTube音楽プレーヤーです。YouTubeから音楽をダウンロードし、ローカルで管理・再生することができます。シンプルなプレイリスト機能を備えており、お気に入りの曲を整理して再生できます。
 
 ## 主な機能
 
-- YouTubeからの音楽ダウンロードと再生
+- YouTubeからの音楽検索、ダウンロード、再生
 - ローカルトラックの管理
 - プレイリストの作成・管理
 - シャッフル再生
@@ -82,10 +82,10 @@ ytpl search "検索クエリ"
 ytpl status
 
 # ローカルに保存済みの曲を再生
-# ytpl play               # ローカルの曲一覧を表示して対話的に検索・選択して再生
-# ytpl play "検索クエリ"
-# 例: ytpl play "アーティスト名"  # アーティスト名で検索して再生
-# 例: ytpl play "曲名"         # 曲名で検索して再生
+# ytpl play                         # ローカルの曲一覧を表示して対話的に検索・選択して再生
+# ytpl play "検索クエリ"            # 検索して再生
+# 例: ytpl play "アーティスト名"    # アーティスト名で検索して再生
+# 例: ytpl play "曲名"              # 曲名で検索して再生
 
 # 再生を一時停止
 ytpl pause
@@ -113,26 +113,26 @@ ytpl shuffle
 ytpl list
 
 # 新しいプレイリストを作成
-ytpl list make マイプレイリスト
+ytpl list make playlist
 
 # 現在再生中の曲をプレイリストに追加
 # 指定したプレイリストが存在しない場合は新規作成されます
-ytpl list add マイプレイリスト
+ytpl list add playlist
 
 # 現在再生中の曲をプレイリストから削除
-ytpl list remove マイプレイリスト
+ytpl list remove playlist
 
 # プレイリストを削除
-ytpl list del マイプレイリスト
+ytpl list del playlist
 
 # プレイリストの内容を表示
-ytpl list show マイプレイリスト
+ytpl list show playlist
 
 # プレイリストを再生
-ytpl list play マイプレイリスト
+ytpl list play playlist
 
 # プレイリストをシャッフル再生
-ytpl list shuffle マイプレイリスト
+ytpl list shuffle playlist
 ```
 
 ### トラック管理
