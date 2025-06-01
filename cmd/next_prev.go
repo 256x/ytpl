@@ -16,21 +16,21 @@ import (
 
 var nextCmd = &cobra.Command{
 	Use:   "next",
-	Short: "Play the next song in the current playlist or shuffled queue",
+	Short: "play the next song in the current playlist or shuffled queue",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
 			fmt.Println("Player is not running.")
 			return
 		}
 		if appState.CurrentPlaylist == "" && len(appState.ShuffleQueue) == 0 {
-			fmt.Println("No active playlist or shuffle queue to advance.")
+			fmt.Println("no active playlist or shuffle queue to advance.")
 			return
 		}
 
 		if appState.CurrentPlaylist != "" {
 			err := player.Next(appState)
 			if err != nil {
-				log.Printf("Error sending next command to player: %v", err)
+				log.Printf("error sending next command to player: %v", err)
 			}
 			time.Sleep(200 * time.Millisecond) // Short delay to allow mpv to update state
 			// No direct display here. statusCmd.Run() will handle it.
@@ -41,12 +41,12 @@ var nextCmd = &cobra.Command{
 
 				nextFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", nextTrackID))
 				if _, err := os.Stat(nextFilePath); os.IsNotExist(err) {
-					fmt.Printf("Warning: Next shuffled track \"%s\" is not locally stocked. Skipping.\n", nextTrackID) // Use ID as fallback here
+					fmt.Printf("warning: next shuffled track \"%s\" is not locally stocked. skipping.\n", nextTrackID) // Use ID as fallback here
 					return
 				}
 
 				if err := player.LoadFile(appState, nextFilePath); err != nil {
-					log.Fatalf("Error loading next shuffled track: %v", err)
+					log.Fatalf("error loading next shuffled track: %v", err)
 				}
 
 				// Update appState based on new track info for display
@@ -55,17 +55,17 @@ var nextCmd = &cobra.Command{
 				appState.LastPlayedTrackIndex = nextIndex
 				appState.IsPlaying = true // Assuming playback starts
 				if err := state.SaveState(); err != nil {
-					log.Printf("Error saving state: %v", err)
+					log.Printf("error saving state: %v", err)
 				}
 				time.Sleep(200 * time.Millisecond) // Short delay to allow mpv to update state
 				// No direct display here. statusCmd.Run() will handle it.
 			} else {
-				fmt.Println("End of shuffle queue. No more songs.")
+				fmt.Println("end of shuffle queue. no more songs.")
 				player.StopPlayer(appState) // Stop player at end of queue
 				return
 			}
 		} else {
-			fmt.Println("No next song available.")
+			fmt.Println("no next song available.")
 			return
 		}
 		statusCmd.Run(statusCmd, []string{}) // Call status command
@@ -74,21 +74,21 @@ var nextCmd = &cobra.Command{
 
 var prevCmd = &cobra.Command{
 	Use:   "prev",
-	Short: "Play the previous song in the current playlist or shuffled queue",
+	Short: "play the previous song in the current playlist or shuffled queue",
 	Run: func(cmd *cobra.Command, args []string) {
 		if appState.PID == 0 {
 			fmt.Println("Player is not running.")
 			return
 		}
 		if appState.CurrentPlaylist == "" && len(appState.ShuffleQueue) == 0 {
-			fmt.Println("No active playlist or shuffle queue to go back.")
+			fmt.Println("no active playlist or shuffle queue to go back.")
 			return
 		}
 
 		if appState.CurrentPlaylist != "" {
 			err := player.Prev(appState)
 			if err != nil {
-				log.Printf("Error sending prev command to player: %v", err)
+				log.Printf("error sending prev command to player: %v", err)
 			}
 			time.Sleep(200 * time.Millisecond) // Short delay
 			// No direct display here. statusCmd.Run() will handle it.
@@ -99,12 +99,12 @@ var prevCmd = &cobra.Command{
 
 				prevFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", prevTrackID))
 				if _, err := os.Stat(prevFilePath); os.IsNotExist(err) {
-					fmt.Printf("Warning: Previous shuffled track \"%s\" is not locally stocked. Skipping.\n", prevTrackID) // Use ID as fallback
+					fmt.Printf("warning: previous shuffled track \"%s\" is not locally stocked. skipping.\n", prevTrackID) // Use ID as fallback
 					return
 				}
 
 				if err := player.LoadFile(appState, prevFilePath); err != nil {
-					log.Fatalf("Error loading previous shuffled track: %v", err)
+					log.Fatalf("error loading previous shuffled track: %v", err)
 				}
 
 				appState.CurrentTrackID = prevTrackID
@@ -117,11 +117,11 @@ var prevCmd = &cobra.Command{
 				time.Sleep(200 * time.Millisecond) // Short delay
 				// No direct display here. statusCmd.Run() will handle it.
 			} else {
-				fmt.Println("Beginning of shuffle queue. No previous songs.")
+				fmt.Println("beginning of shuffle queue. no previous songs.")
 				return
 			}
 		} else {
-			fmt.Println("No previous song available.")
+			fmt.Println("no previous song available.")
 		}
 		statusCmd.Run(statusCmd, []string{}) // Call status command
 	},

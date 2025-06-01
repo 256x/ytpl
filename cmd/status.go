@@ -21,7 +21,7 @@ var isFirstOutput int32 = 1 // 1 means true (first output), 0 means false
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show current playback status",
+	Short: "show current playback status",
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowStatus()
 	},
@@ -48,7 +48,7 @@ func ShowStatus() {
 	}
 
 	if appState.PID == 0 {
-		fmt.Println("[ No track playing ]")
+		fmt.Println("[ no track playing ]")
 		atomic.StoreInt32(&isFirstOutput, 0)
 		return
 	}
@@ -59,7 +59,7 @@ func ShowStatus() {
 
 	// Re-check appState.PID after update, as it might have become 0 if mpv exited
 	if appState.PID == 0 {
-		fmt.Println("[ No track playing (MPV might have exited) ]")
+		fmt.Println("[ no track playing (mpv might have exited) ]")
 		return
 	}
 
@@ -91,7 +91,7 @@ func ShowStatus() {
 	}
 
 	// Build the status line
-	statusLine := fmt.Sprintf("[ %s", currentDisplayTitle)
+	statusLine := fmt.Sprintf("[ %s", strings.ToLower(currentDisplayTitle))
 
 	// Add playlist info if available
 	if appState.CurrentPlaylist != "" {

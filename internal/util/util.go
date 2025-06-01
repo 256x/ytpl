@@ -33,7 +33,7 @@ func SelectFromList[T any](label string, items []T, displayFunc func(T) string) 
 	if err != nil {
 		var zero T
 		if err == fuzzyfinder.ErrAbort {
-			return zero, fmt.Errorf("selection cancelled by user")
+			return zero, fmt.Errorf("selection cancelled")
 		}
 		return zero, fmt.Errorf("failed to select item: %w", err)
 	}
@@ -88,7 +88,7 @@ func Confirm(question string) (bool, error) {
 			return false, nil
 		}
 
-		fmt.Fprintln(os.Stderr, "Please type 'y' or 'n'")
+		fmt.Fprintln(os.Stderr, "please type 'y' or 'n'")
 	}
 }
 

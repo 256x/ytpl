@@ -18,7 +18,7 @@ import (
 
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
-	Short: "Search YouTube for music",
+	Short: "search youtube for music",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		query := strings.Join(args, " ")
@@ -27,18 +27,18 @@ var searchCmd = &cobra.Command{
 		tracks, err := yt.SearchYouTube(cfg, query)
 		util.StopSpinner(searchSpinner)
 		if err != nil {
-			log.Fatalf("Error searching YouTube: %v", err)
+			log.Fatalf("error searching youtube: %v", err)
 		}
 
 		if len(tracks) == 0 {
-			fmt.Println("No results found.")
+			fmt.Println("no results found.")
 			return
 		}
 
 		// Initialize fzf
 		f, err := fuzzyfinder.New()
 		if err != nil {
-			log.Fatalf("Error initializing fzf: %v", err)
+			log.Fatalf("error initializing fzf: %v", err)
 		}
 
 		// Show fzf prompt with basic info
@@ -54,15 +54,15 @@ var searchCmd = &cobra.Command{
 		
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
-				fmt.Println("Search cancelled.")
+				fmt.Println("search cancelled.")
 				return
 			}
-			log.Fatalf("Error running fzf: %v", err)
+			log.Fatalf("error running fzf: %v", err)
 		}
 
 		// Get the selected track
 		if len(idxs) == 0 {
-			log.Fatalf("No track selected")
+			log.Fatalf("no track selected")
 		}
 		selectedTrack := tracks[idxs[0]]
 
@@ -73,7 +73,7 @@ var searchCmd = &cobra.Command{
 
 		if err == nil {
 			// Use existing local file
-			log.Printf("Using existing local track: %s", selectedTrack.Title)
+			log.Printf("using existing local track: %s", selectedTrack.Title)
 			downloadedFilePath = filepath.Join(cfg.DownloadDir, selectedTrack.ID+".mp3")
 			// Use the local track info but preserve the title from search results
 			// as it might be more up-to-date
@@ -86,12 +86,12 @@ var searchCmd = &cobra.Command{
 			util.StopSpinner(downloadSpinner)
 
 			if err != nil {
-				log.Fatalf("Error downloading track: %v", err)
+				log.Fatalf("error downloading track: %v", err)
 			}
 		}
 
 		if err := player.StartPlayer(cfg, appState, downloadedFilePath); err != nil {
-			log.Fatalf("Error starting player: %v", err)
+			log.Fatalf("error starting player: %v", err)
 		}
 
 		appState.CurrentTrackID = finalTrackInfo.ID
@@ -101,7 +101,7 @@ var searchCmd = &cobra.Command{
 		appState.CurrentPlaylist = ""
 
 		if err := state.SaveState(); err != nil {
-			log.Printf("Error saving state: %v", err)
+			log.Printf("error saving state: %v", err)
 		}
 
 		// Show status after starting player

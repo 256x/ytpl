@@ -22,7 +22,7 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Manage and play music playlists",
-	Long:  `Subcommands for managing playlists: make, add, remove, del, show, play, shuffle.`,
+	Long:  `Subcommands for managing playlists: make, add, remove, del, play, shuffle.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			// If no arguments, show playlist selection prompt
@@ -51,7 +51,7 @@ var listCmd = &cobra.Command{
 
 			action, err := util.SelectFromList(
 				"Select action for playlist '"+selectedPlaylist+"':",
-				[]string{"Play (ordered)", "Play (shuffled)", "Show contents"},
+				[]string{"Play (ordered)", "Play (shuffled)"},
 				func(s string) string { return s },
 			)
 			if err != nil {
@@ -67,8 +67,6 @@ var listCmd = &cobra.Command{
 				listPlayCmd.Run(listPlayCmd, []string{selectedPlaylist})
 			case "Play (shuffled)":
 				listShuffleCmd.Run(listShuffleCmd, []string{selectedPlaylist})
-			case "Show contents":
-				listShowCmd.Run(listShowCmd, []string{selectedPlaylist})
 			default:
 				fmt.Println("Invalid action selected.")
 			}
@@ -158,28 +156,6 @@ var listDelCmd = &cobra.Command{
 			log.Fatalf("Error deleting playlist '%s': %v", name, err)
 		}
 		fmt.Printf("Playlist '%s' deleted successfully.\n", name)
-	},
-}
-
-var listShowCmd = &cobra.Command{
-	Use:   "show <playlist_name>",
-	Short: "Show contents of a playlist",
-	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-		p, err := playlist.LoadPlaylist(name)
-		if err != nil {
-			log.Fatalf("Error loading playlist '%s': %v", name, err)
-		}
-
-		fmt.Printf("Playlist '%s' (%d songs):\n", p.Name, len(p.Tracks))
-		if len(p.Tracks) == 0 {
-			fmt.Println("  (empty)")
-			return
-		}
-		for i, track := range p.Tracks {
-			fmt.Printf("  %d. %s (ID: %s)\n", i+1, track.Title, track.ID)
-		}
 	},
 }
 
