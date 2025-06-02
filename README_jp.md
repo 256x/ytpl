@@ -1,50 +1,49 @@
-# ytpl - コマンドラインYouTube音楽プレーヤー
+# ytpl - Command Line YouTube Music Player
 
-[English version](README.md)
+[English](README.md)
 
-
-`ytpl`は、コマンドラインで動作するYouTube音楽プレーヤーです。YouTubeから音楽をダウンロードし、ローカルで管理・再生することができます。シンプルなプレイリスト機能を備えており、お気に入りの曲を整理して再生できます。
+`ytpl` は、YouTubeから音楽をダウンロードしてローカルで管理・再生できるコマンドライン YouTube ミュージックプレイヤーです。プレイリスト機能により、お気に入りの楽曲を整理して再生することができます。
 
 ## 主な機能
 
-- YouTubeからの音楽検索、ダウンロード、再生
-- ローカルトラックの管理
+- YouTubeからの音楽ダウンロード・再生
+- ローカル楽曲の管理
 - プレイリストの作成・管理
-- トラックメタデータの編集（タイトル、アーティスト名など）
+- 楽曲メタデータの編集（タイトル、アーティスト等）
 - シャッフル再生
-- 再生状態の確認と制御
+- 再生状況の確認・制御
 
 ## インストール
 
-### 前提条件
+### 必要な環境
 
 - Go 1.16 以上
-- MPVプレーヤー
+- MPV プレイヤー
 - yt-dlp
 
 ### インストール手順
 
-#### リリース済みバイナリを使用する場合
+#### ビルド済みバイナリを使用する場合
 
-[リリースページ](https://github.com/256x/ytpl/releases)からお使いのOSとアーキテクチャに合ったバイナリをダウンロードし、実行可能な状態にしてPATHの通ったディレクトリに配置してください。
+[リリースページ](https://github.com/256x/ytpl/releases)からお使いのOSとアーキテクチャに対応したバイナリをダウンロードし、実行可能にしてPATHの通ったディレクトリに配置してください。
 
 ```bash
-# 例: Linux amd64 の場合
+# 例：Linux amd64の場合
 wget https://github.com/256x/ytpl/releases/download/vX.Y.Z/ytpl_linux_amd64
 chmod +x ytpl_linux_amd64
 sudo mv ytpl_linux_amd64 /usr/local/bin/ytpl
 ```
 
-#### Go を使用する場合
+#### Goを使用する場合
 
-Go がインストールされている環境では、以下のコマンドでインストールできます：
+Goがインストールされている場合は、以下のコマンドでインストールできます：
 
 ```bash
-# Go 1.16 以降の場合
+# Go 1.16以降
 go install github.com/256x/ytpl@latest
 ```
 
-`go install` コマンドは、バイナリを `$GOPATH/bin` または `$GOBIN` にインストールします。これらのディレクトリが `PATH` に含まれていることを確認してください。
+`go install` コマンドは `$GOPATH/bin` または `$GOBIN` にバイナリをインストールします。これらのディレクトリが `PATH` に含まれていることを確認してください。
 
 #### ソースからビルドする場合
 
@@ -53,160 +52,183 @@ go install github.com/256x/ytpl@latest
 git clone https://github.com/256x/ytpl.git
 cd ytpl
 
-# 依存関係を取得
+# 依存関係をダウンロード
 go mod download
 
 # ビルド
 go build -o ytpl
 
-# バイナリをPATHの通ったディレクトリに配置
+# バイナリをPATHの通ったディレクトリに移動
 sudo mv ytpl /usr/local/bin/
 ```
 
-## 使い方
+## 使用方法
 
 ### 基本コマンド
 
 ```
-# ヘルプを表示
+# ヘルプの表示
 ytpl --help
 
-# YouTubeで音楽を検索して再生
-ytpl search "検索クエリ"
-# 例: ytpl search "アーティスト名 曲名"
-# 例: ytpl search "曲名 カバー"
-# 例: ytpl search "アーティスト名 アルバム名 曲名"
-# 例: ytpl search "https://www.youtube.com/watch?v=動画ID"
-# YouTubeの検索と同様に、キーワードやURLを自由に入力できます。
+# YouTubeで音楽を検索してダウンロード・再生
+ytpl search [クエリ]
+# 例：
+# ytpl search "アーティスト名 楽曲名"        # アーティストと楽曲名で検索
+# ytpl search "楽曲名 カバー"              # カバー楽曲を検索
+# ytpl search "アーティスト名 アルバム名"   # アルバムから検索
+# ytpl search "https://youtube.com/..."   # YouTube URLから直接再生
+# ytpl search "プレイリスト名"             # プレイリストを検索・再生
+# ytpl search "ライブ 楽曲名"              # ライブ音源を検索
+# ytpl search "カバー 楽曲名"              # カバー動画を検索
 
-# トラックのメタデータを編集（タイトル、アーティスト名など）
-ytpl edit [検索クエリ]
-# 例:
-# ytpl edit                  # 対話型でトラックを選択して編集
-# ytpl edit "曲名"          # 特定のトラックを検索して編集
+# 楽曲メタデータの編集（タイトル、アーティスト等）
+ytpl edit [クエリ]
+# 例：
+# ytpl edit                  # インタラクティブな楽曲選択
+# ytpl edit "楽曲名"        # 特定の楽曲を検索して編集
 
-# 現在の再生状態を表示
+# ローカル保存楽曲の再生
+ytpl play [クエリ]
+# 例：
+# ytpl play                     # インタラクティブな楽曲選択
+# ytpl play "アーティスト名"     # アーティスト名で検索
+# ytpl play "楽曲名"            # 楽曲名で検索
+# ytpl play "アルバム名"        # アルバム名で検索
+
+# プレイリストの管理・再生
+ytpl list
+
+# プレイリストの再生
+# ytpl list play <プレイリスト名>    # 順番に再生
+# ytpl list shuffle <プレイリスト名> # シャッフル再生
+
+# プレイリストの作成・管理
+# ytpl list make <プレイリスト名>     # 新しいプレイリストを作成
+# ytpl list add <プレイリスト> <楽曲ID> # プレイリストに追加
+# ytpl list remove <プレイリスト> <楽曲ID> # プレイリストから削除
+# ytpl list delete <プレイリスト>        # プレイリストを削除
+
+# 全ローカル楽曲のシャッフル再生
+ytpl shuffle
+
+# 現在の再生状況を表示
 ytpl status
 
-# ローカルに保存済みの曲を再生
-# ytpl play                         # ローカルの曲一覧を表示して対話的に検索・選択して再生
-# ytpl play "検索クエリ"            # 検索して再生
-# 例: ytpl play "アーティスト名"    # アーティスト名で検索して再生
-# 例: ytpl play "曲名"              # 曲名で検索して再生
+# 再生制御
+ytpl play [クエリ]  # ローカル保存楽曲の再生
+# 例：
+# ytpl play
+# ytpl play "アーティスト名 楽曲名" # あいまい検索でリスト表示
 
-# 再生を一時停止
-ytpl pause
+ytpl pause   # 一時停止
+ytpl resume  # 一時停止から再開
+ytpl stop    # 停止
+ytpl next    # 次の楽曲にスキップ
+ytpl prev    # 前の楽曲に戻る
+ytpl volume <0-100>  # 音量設定（0-100）
 
-# 再生を再開
-ytpl resume
+# ローカルストレージから楽曲を削除
+ytpl delete [クエリ]
 
-# 再生を停止
-ytpl stop
-
-# 次の曲にスキップ
-ytpl next
-
-# 前の曲に戻る
-ytpl prev
-
-# ローカルに保存された曲を全てシャッフル再生
-ytpl shuffle
+# バージョン情報の表示
+ytpl --version または ytpl -v
 ```
 
 ### プレイリスト管理
 
 ```
-# 対話型でプレイリストを操作（サブコマンドを指定しない場合）
+# インタラクティブなプレイリスト操作（サブコマンドが指定されていない場合）
 ytpl list
 
 # 新しいプレイリストを作成
-ytpl list create プレイリスト名
+ytpl list create MyPlaylist
 
-# 現在再生中の曲をプレイリストに追加
-# 指定したプレイリストが存在しない場合は新規作成されます
-ytpl list add プレイリスト名
+# 現在再生中の楽曲をプレイリストに追加
+# 指定されたプレイリストが存在しない場合は作成されます
+ytpl list add MyPlaylist
 
-# 現在再生中の曲をプレイリストから削除
-ytpl list remove プレイリスト名
+# 現在再生中の楽曲をプレイリストから削除
+ytpl list remove MyPlaylist
 
 # プレイリストを削除
-ytpl list del プレイリスト名
+ytpl list del MyPlaylist
 
 # プレイリストの内容を表示
-ytpl list show プレイリスト名
+ytpl list show MyPlaylist
 
 # プレイリストを再生（順番通り）
-ytpl list play プレイリスト名
+ytpl list play MyPlaylist
 
 # プレイリストをシャッフル再生
-ytpl list shuffle プレイリスト名
+ytpl list shuffle MyPlaylist
 ```
 
-### トラック管理
+### 楽曲管理
 
 ```
-# ダウンロードしたトラックを削除
-# 削除したトラックはすべてのプレイリストからも自動的に削除されます
+# ダウンロード済み楽曲の削除
+# 削除された楽曲は全てのプレイリストから自動的に削除されます
 ytpl delete
 
-# トラックのメタデータを編集（タイトル、アーティスト名など）
-ytpl edit [検索クエリ]
+# 楽曲メタデータの編集（タイトル、アーティスト等）
+ytpl edit [クエリ]
 
-# ボリュームを調整 (0-100)
+# 音量調整（0-100）
 ytpl volume 80
 ```
 
 ## 設定
 
-設定ファイルは `~/.config/ytpl/config.toml` に保存されます。以下の設定項目が利用可能で、それぞれデフォルト値が設定されています：
+設定ファイルは `~/.config/ytpl/config.toml` に保存されます。以下の設定項目が利用可能で、それぞれデフォルト値があります：
 
 ```toml
-# YouTubeの音声ファイルを保存するディレクトリ
-# $HOME などの環境変数が使用可能
+# YouTube音声ファイルの保存ディレクトリ
+# $HOME等の環境変数を使用可能
 download_dir = "$HOME/.local/share/ytpl/mp3/"
 
-# メディアプレーヤーのパス（mpvが推奨）
+# メディアプレイヤーのパス（mpvを推奨）
 player_path = "mpv"
 
-# MPVのIPC（プロセス間通信）ソケットのパス
+# MPV IPC（プロセス間通信）ソケットパス
 player_ipc_socket_path = "/tmp/ytpl-mpv-socket"
 
-# デフォルトのボリューム（0-100）
+# デフォルト音量（0-100）
 default_volume = 80
 
 # yt-dlpのパス
 yt_dlp_path = "yt-dlp"
 
-# プレイリストを保存するディレクトリ
+# プレイリスト保存ディレクトリ
 playlist_dir = "$HOME/.local/share/ytpl/playlists/"
 
-# クッキーを読み込むブラウザ（例: "chrome", "firefox", "chromium", "brave", "edge"）
+# クッキーを読み込むブラウザ（例："chrome", "firefox", "chromium", "brave", "edge"）
 cookie_browser = "chrome"
 
-# ブラウザのプロファイル名（通常は不要）
+# ブラウザプロファイル名（通常は不要）
 # cookie_profile = ""
 
-# YouTubeから取得する検索結果の最大数
+# YouTubeからの検索結果の最大取得数
 max_search_results = 30
 ```
 
-### 主な設定項目の説明
+### 主要設定項目の説明
 
-- `download_dir`: ダウンロードしたトラックの保存先ディレクトリ
-- `player_path`: MPVプレーヤーのパス（`mpv` と指定するとパスが通っている必要があります）
-- `player_ipc_socket_path`: MPVの制御に使用するIPCソケットのパス
-- `default_volume`: 起動時のデフォルトボリューム（0-100）
+- `download_dir`: ダウンロードした楽曲を保存するディレクトリ
+- `player_path`: MPVプレイヤーのパス（`mpv` と指定する場合はPATHに含まれている必要があります）
+- `player_ipc_socket_path`: MPV制御に使用するIPCソケットパス
+- `default_volume`: 起動時のデフォルト音量（0-100）
 - `yt_dlp_path`: yt-dlpのパス（デフォルト: "yt-dlp"）
 - `playlist_dir`: プレイリストを保存するディレクトリ（デフォルト: "$HOME/.local/share/ytpl/playlists/"）
-- `cookie_browser`: クッキーを読み込むブラウザを指定（ログインが必要な動画のダウンロードに必要、デフォルト: "firefox"）
-- `max_search_results`: 検索結果の最大表示件数
+- `cookie_browser`: クッキーを読み込むブラウザを指定（ログイン必要な動画のダウンロードに必要、デフォルト: "firefox"）
+- `max_search_results`: 検索結果の最大表示数
 
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルを参照してください。
+このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
 
-## 注意事項
+## 重要な注意事項
 
-- このソフトウェアは、YouTubeの利用規約に準拠して使用してください。
-- ダウンロードしたコンテンツは、個人的な使用目的に限定してください。
-- 大量のトラックをダウンロードする場合は、YouTubeのレート制限に注意してください。
+- このソフトウェアはYouTubeの利用規約に従って使用してください。
+- ダウンロードしたコンテンツは個人使用の範囲内に留めてください。
+- 大量の楽曲をダウンロードする際は、YouTubeのレート制限にご注意ください。
+

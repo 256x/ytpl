@@ -1,32 +1,32 @@
 #!/bin/bash
-set -e  # エラーが発生したらスクリプトを終了
-set -x  # デバッグ情報を表示
+set -e  # Exit on error
+set -x  # Print debug information
 
-# カレントディレクトリを保存
+# Save current directory
 PROJECT_ROOT=$(pwd)
 
-# バージョン情報を取得
+# Get version information
 VERSION=$(grep 'const Version' cmd/root.go | awk -F'"' '{print $2}')
 OUTPUT_DIR="${PROJECT_ROOT}/release"
 
-# 出力ディレクトリの作成
+# Create output directory
 mkdir -p ${OUTPUT_DIR}
 
 echo "Building ytpl version: ${VERSION}"
 
-# ビルド対象のプラットフォームを定義（mpvプレーヤーを使用しているためLinuxのみ）
+# Define target platforms (Linux only since we use mpv player)
 PLATFORMS=(
     "linux/amd64"
     "linux/arm64"
 )
 
-# 各プラットフォーム向けにビルド
+# Build for each platform
 for platform in "${PLATFORMS[@]}"; do
-    # プラットフォームをOSとアーキテクチャに分割
+    # Split platform into OS and architecture
     OS=$(echo ${platform} | cut -d'/' -f1)
     ARCH=$(echo ${platform} | cut -d'/' -f2)
     
-    # 出力ファイル名を設定
+    # Set output filename
     OUTPUT_NAME="ytpl-${VERSION}-${OS}-${ARCH}"
     if [ "$OS" = "windows" ]; then
         OUTPUT_NAME="${OUTPUT_NAME}.exe"
@@ -35,22 +35,22 @@ for platform in "${PLATFORMS[@]}"; do
     echo "\n=== Building for ${OS}/${ARCH} ==="
     echo "Output: ${OUTPUT_DIR}/${OUTPUT_NAME}"
     
-    # ビルドコマンドを実行
-    cd "${PROJECT_ROOT}"  # 必ずプロジェクトルートに戻る
-    set +e  # エラーを一時的に無効化
+    # Execute build command
+    cd "${PROJECT_ROOT}"  # Always return to project root
+    set +e  # Temporarily disable error detection
     env CGO_ENABLED=0 GOOS=${OS} GOARCH=${ARCH} go build -v -ldflags="-s -w" -o "${OUTPUT_DIR}/${OUTPUT_NAME}" .
     BUILD_STATUS=$?
-    set -e  # エラー検出を再度有効化
+    set -e  # Re-enable error detection
     
-    # ビルドが成功したか確認
+    # Check if build was successful
     if [ ${BUILD_STATUS} -ne 0 ]; then
         echo "!! Error building for ${OS}/${ARCH} (status: ${BUILD_STATUS}) !!"
-        continue  # エラーが発生しても次のプラットフォームをビルド
+        continue  # Continue with next platform even if build fails
     fi
     
-    # 圧縮
+    # Compression
     echo "Compressing..."
-    cd "${OUTPUT_DIR}"  # 出力ディレクトリに移動
+    cd "${OUTPUT_DIR}"  # Change to output directory
     
     if [ "$OS" = "windows" ]; then
         zip "${OUTPUT_NAME}.zip" "${OUTPUT_NAME}" && \
@@ -62,7 +62,7 @@ for platform in "${PLATFORMS[@]}"; do
         echo "Created: ${OUTPUT_DIR}/${OUTPUT_NAME}.tar.gz"
     fi
     
-    cd - > /dev/null  # 元のディレクトリに戻る
+    cd - > /dev/null  # Return to original directory
 done
 
 echo "\n=== Build Summary ==="
