@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2025-06-03
+
+### Changed
+- Removed debug logs for cleaner release build
+- Simplified error handling for state saving operations
+- Removed unnecessary newlines in search and download output
+- Improved code consistency in error handling patterns
+
 ## [0.1.4] - 2025-06-03
 
 ### Added
@@ -17,11 +25,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- (Add new features here)
+
 ### Changed
-- Removed debug logs for cleaner release build
-- Simplified error handling for state saving operations
-- Removed unnecessary newlines in search and download output
-- Improved code consistency in error handling patterns
+- (List changes here)
+
+### Fixed
+- (List bug fixes here)
 
 ## [0.1.3] - 2025-06-01
 

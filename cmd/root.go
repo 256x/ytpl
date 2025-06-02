@@ -17,7 +17,7 @@ import (
 )
 
 // Version is the current version of the application.
-const Version = "0.1.4"
+const Version = "0.1.5"
 
 var (
 	cfg      *config.Config
