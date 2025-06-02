@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added track metadata editor (accessible via 'e' key in play command)
+- Added `.info.json` optimization to reduce file size
+- Added support for editing track metadata (title, artist, album, etc.)
+
+### Changed
+- Refactored track metadata handling to use `.tracks` file exclusively
+- Improved performance by removing redundant MP3 tag reads
+- Enhanced metadata consistency across the application
+
 ## [0.1.3] - 2025-06-01
 
 ### Added

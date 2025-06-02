@@ -4,24 +4,24 @@ package playlist
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 )
 
-// TrackInfo represents a single entry in a playlist.
-// Must be consistent with yt.TrackInfo for ID, Title, and Duration.
+// TrackInfo represents a single track in a playlist.
+// Only the ID is stored in the playlist file.
 type TrackInfo struct {
-	ID       string
-	Title    string
-	Duration float64 // Duration in seconds
+	ID string // YouTube video ID
 }
 
-// Playlist holds a list of tracks.
+// Playlist holds a list of track IDs.
 type Playlist struct {
-	Name   string
-	Tracks []TrackInfo
+	Name   string      // Name of the playlist
+	Tracks []TrackInfo // List of track IDs in the playlist
 }
 
 var (
@@ -41,69 +41,78 @@ func Init(dir string) {
 func getPlaylistFilePath(name string) string {
 	sanitizedName := strings.ReplaceAll(name, string(filepath.Separator), "_")
 	sanitizedName = strings.ReplaceAll(sanitizedName, "..", "__")
-	return filepath.Join(playlistsDir, sanitizedName+".txt")
+	// Remove .ytpl extension if already present to avoid double extension
+	sanitizedName = strings.TrimSuffix(sanitizedName, ".ytpl")
+	return filepath.Join(playlistsDir, sanitizedName+".ytpl")
 }
 
 // LoadPlaylist loads a playlist from its file.
+// Each line in the file should contain a single track ID.
+// It tries to load .ytpl file first, and falls back to .txt if not found.
 func LoadPlaylist(name string) (*Playlist, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	// First try with .ytpl extension
+	path := getPlaylistFilePath(name)
+	_, err := os.Stat(path)
 
-	filePath := getPlaylistFilePath(name)
-	file, err := os.Open(filePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("playlist '%s' does not exist", name)
+	// If .ytpl doesn't exist, try with .txt extension for backward compatibility
+	if os.IsNotExist(err) {
+		txtPath := strings.TrimSuffix(path, ".ytpl") + ".txt"
+		if _, txtErr := os.Stat(txtPath); txtErr == nil {
+			path = txtPath
 		}
-		return nil, fmt.Errorf("failed to open playlist file %s: %w", filePath, err)
+	} else if err != nil {
+		return nil, fmt.Errorf("error checking playlist file %s: %w", path, err)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening playlist file %s: %w", path, err)
 	}
 	defer file.Close()
 
-	p := &Playlist{Name: name}
+	playlist := &Playlist{
+		Name:   name,
+		Tracks: []TrackInfo{},
+	}
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
-		}
-		// Format: ID|Title|Duration
-		parts := strings.Split(line, "|")
-		if len(parts) >= 2 {
-			track := TrackInfo{
-				ID:    parts[0],
-				Title: parts[1],
-			}
-			// If Duration is available, parse it
-			if len(parts) >= 3 && parts[2] != "" {
-				var duration float64
-				n, err := fmt.Sscanf(parts[2], "%f", &duration)
-				if err == nil && n == 1 {
-					track.Duration = duration
-				} else {
-					fmt.Fprintf(os.Stderr, "warning: failed to parse duration '%s' in playlist %s: %v\n", parts[2], name, err)
-				}
-			}
-			p.Tracks = append(p.Tracks, track)
-		} else {
-			fmt.Fprintf(os.Stderr, "warning: malformed line in playlist %s: %s\n", name, line)
+		trackID := strings.TrimSpace(scanner.Text())
+		if trackID != "" {
+			playlist.Tracks = append(playlist.Tracks, TrackInfo{ID: trackID})
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read playlist file %s: %w", filePath, err)
+		return nil, fmt.Errorf("error reading playlist file %s: %w", path, err)
 	}
-	return p, nil
+
+	return playlist, nil
 }
 
 // SavePlaylist saves a playlist to its file.
+// Each line in the file will contain a single track ID.
+// It always saves with .ytpl extension and removes any old .txt version.
 func SavePlaylist(p *Playlist) error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	filePath := getPlaylistFilePath(p.Name)
 	var sb strings.Builder
 	for _, track := range p.Tracks {
-		// Format: ID|Title|Duration
-		sb.WriteString(fmt.Sprintf("%s|%s|%f\n", track.ID, track.Title, track.Duration))
+		sb.WriteString(track.ID)
+		sb.WriteString("\n")
+	}
+
+	filePath := getPlaylistFilePath(p.Name)
+
+	// Remove old .txt version if it exists
+	txtPath := strings.TrimSuffix(filePath, ".ytpl") + ".txt"
+	if _, err := os.Stat(txtPath); err == nil {
+		if err := os.Remove(txtPath); err != nil {
+			log.Printf("warning: failed to remove old .txt playlist file %s: %v", txtPath, err)
+		}
+	}
+
+	// Create the directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return fmt.Errorf("failed to create playlist directory: %w", err)
 	}
 
 	return os.WriteFile(filePath, []byte(sb.String()), 0644)
@@ -121,9 +130,10 @@ func AddTrack(playlistName string, track TrackInfo) error {
 		}
 	}
 
+	// Check if track already exists in the playlist
 	for _, t := range p.Tracks {
 		if t.ID == track.ID {
-			return fmt.Errorf("track '%s' (ID: %s) already exists in playlist '%s'", track.Title, track.ID, playlistName)
+			return fmt.Errorf("track with ID %s already exists in playlist '%s'", track.ID, playlistName)
 		}
 	}
 
@@ -170,29 +180,77 @@ func MakePlaylist(name string) error {
 }
 
 // DeletePlaylist deletes a playlist file.
+// It will try to delete both .ytpl and .txt versions if they exist.
 func DeletePlaylist(name string) error {
-	filePath := getPlaylistFilePath(name)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return fmt.Errorf("playlist '%s' does not exist", name)
+	path := getPlaylistFilePath(name)
+	err := os.Remove(path)
+
+	// If .ytpl file doesn't exist or was successfully deleted, try .txt
+	if os.IsNotExist(err) || err == nil {
+		txtPath := strings.TrimSuffix(path, ".ytpl") + ".txt"
+		if _, txtErr := os.Stat(txtPath); txtErr == nil {
+			if txtErr := os.Remove(txtPath); txtErr != nil {
+				log.Printf("warning: failed to remove .txt playlist file %s: %v", txtPath, txtErr)
+				// Only return the original error if it exists
+				if err == nil {
+					err = txtErr
+				}
+			}
+		}
 	}
-	return os.Remove(filePath)
+	return err
 }
 
 // ListAllPlaylists returns a list of all available playlist names.
+// Playlist names are derived from the filenames in the playlist directory.
+// It returns each playlist name only once, preferring .ytpl over .txt if both exist.
 func ListAllPlaylists() ([]string, error) {
 	files, err := os.ReadDir(playlistsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return []string{}, nil
 		}
-		return nil, fmt.Errorf("failed to read playlist directory %s: %w", playlistsDir, err)
+		return nil, fmt.Errorf("error reading playlists directory: %w", err)
 	}
 
-	var names []string
+	// Track seen playlists and their extensions
+	playlistSet := make(map[string]string) // name -> best extension found ("ytpl" or "txt")
+
+	var playlists []string
+
+	// First pass: find all playlists and track the best extension
 	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(file.Name(), ".txt") {
-			names = append(names, strings.TrimSuffix(file.Name(), ".txt"))
+		if file.IsDir() {
+			continue
+		}
+
+		name := file.Name()
+		var baseName, ext string
+
+		switch {
+		case strings.HasSuffix(name, ".ytpl"):
+			ext = "ytpl"
+			baseName = name[:len(name)-5]
+		case strings.HasSuffix(name, ".txt"):
+			ext = "txt"
+			baseName = name[:len(name)-4]
+		default:
+			continue
+		}
+
+		// If we haven't seen this playlist yet, or we found a better extension
+		if currentExt, exists := playlistSet[baseName]; !exists || currentExt == "txt" && ext == "ytpl" {
+			playlistSet[baseName] = ext
 		}
 	}
-	return names, nil
+
+	// Convert the map to a slice of playlist names
+	for name := range playlistSet {
+		playlists = append(playlists, name)
+	}
+
+	// Sort the playlists alphabetically
+	sort.Strings(playlists)
+
+	return playlists, nil
 }

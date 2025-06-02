@@ -16,6 +16,7 @@ import (
 	"ytpl/internal/player"
 	"ytpl/internal/playlist"
 	"ytpl/internal/state"
+	"ytpl/internal/tracks"
 	"ytpl/internal/util"
 	"ytpl/internal/yt"
 )
@@ -106,20 +107,40 @@ var listAddCmd = &cobra.Command{
 		}
 
 		trackToAdd := playlist.TrackInfo{
-			ID:       appState.CurrentTrackID,
-			Title:    appState.CurrentTrackTitle,
-			Duration: appState.CurrentTrackDuration,
+			ID: appState.CurrentTrackID,
 		}
 
-		err := playlist.AddTrack(playlistName, trackToAdd)
+		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
+		if err != nil {
+			log.Fatalf("error initializing track manager: %v", err)
+		}
+
+		track, exists := trackManager.GetTrack(appState.CurrentTrackID)
+		trackTitle := appState.CurrentTrackID // Fallback to ID if track not found
+		if exists && track != nil {
+			trackTitle = track.Title
+		}
+
+		err = playlist.AddTrack(playlistName, trackToAdd)
 		if err != nil {
 			if strings.Contains(err.Error(), "already exists in playlist") {
-				fmt.Printf("\n- track '%s' is already in playlist '%s'\n", appState.CurrentTrackTitle, playlistName)
+				fmt.Printf("\n- track '%s' is already in playlist '%s'\n\n", trackTitle, playlistName)
+			} else if strings.Contains(err.Error(), "no such file or directory") || strings.Contains(err.Error(), "does not exist") {
+				// プレイリストが存在しない場合は作成してから再試行
+				if err := playlist.MakePlaylist(playlistName); err != nil {
+					log.Fatalf("failed to create playlist '%s': %v\n", playlistName, err)
+				}
+				// 再度追加を試みる
+				err = playlist.AddTrack(playlistName, trackToAdd)
+				if err != nil {
+					log.Fatalf("error adding song to playlist '%s': %v\n", playlistName, err)
+				}
+				fmt.Printf("\n- created playlist '%s' and added track '%s'\n\n", playlistName, trackTitle)
 			} else {
-				log.Fatalf("error adding song to playlist '%s': %v", playlistName, err)
+				log.Fatalf("error adding song to playlist '%s': %v\n", playlistName, err)
 			}
 		} else {
-			fmt.Printf("\n- added \"%s\" to playlist '%s'\n", appState.CurrentTrackTitle, playlistName)
+			fmt.Printf("\n- added track '%s' to playlist '%s'\n\n", trackTitle, playlistName)
 		}
 	},
 }
@@ -139,7 +160,7 @@ var listRemoveCmd = &cobra.Command{
 		if err := playlist.RemoveTrack(playlistName, appState.CurrentTrackID); err != nil {
 			log.Fatalf("error removing track from playlist: %v", err)
 		}
-		fmt.Printf("\n- removed \"%s\" from playlist '%s'.\n", appState.CurrentTrackTitle, playlistName)
+		fmt.Printf("\n- removed track with ID %s from playlist '%s'.\n", appState.CurrentTrackID, playlistName)
 	},
 }
 
@@ -182,23 +203,44 @@ var listShowCmd = &cobra.Command{
 			return
 		}
 
-		// Format tracks for display with track numbers and duration
+		// Initialize track manager to get metadata
+		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
+		if err != nil {
+			log.Fatalf("error initializing track manager: %v", err)
+		}
+
+		// Format tracks for display with track numbers, titles, and metadata
 		displayItems := make([]struct {
-			Track       playlist.TrackInfo
+			TrackID     string
 			DisplayText string
-		}, len(p.Tracks))
+		}, 0, len(p.Tracks))
+
+		// Get tracks from track manager for metadata
+		trackManager, err = tracks.NewManager("", cfg.DownloadDir)
+		if err != nil {
+			log.Fatalf("error initializing track manager: %v", err)
+		}
 
 		for i, track := range p.Tracks {
-		displayText := fmt.Sprintf("%02d: %s", i+1, track.Title)
+			trackInfo, found := trackManager.GetTrack(track.ID)
+			
+			var displayText string
+			if found {
+				// Format: "01:[3:45] - Track Title"
+				durationStr := strings.Trim(util.FormatDuration(trackInfo.Duration), "[]")
+				displayText = fmt.Sprintf("%02d:[%s] - %s", i+1, durationStr, trackInfo.Title)
+			} else {
+				displayText = fmt.Sprintf("%02d: [--:--] - Unknown Track (ID: %s)", i+1, track.ID)
+			}
 
-		displayItems[i] = struct {
-			Track       playlist.TrackInfo
-			DisplayText string
-		}{
-			Track:       track,
-			DisplayText: displayText,
+			displayItems = append(displayItems, struct {
+				TrackID     string
+				DisplayText string
+			}{
+				TrackID:     track.ID,
+				DisplayText: displayText,
+			})
 		}
-	}
 
 
 		// Create fzf instance with custom prompt
@@ -231,7 +273,14 @@ var listShowCmd = &cobra.Command{
 
 		// Play the selected track
 		selected := displayItems[idxs[0]]
-		trackPath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", selected.Track.ID))
+		trackPath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", selected.TrackID))
+
+		// Get track info for display
+		trackInfo, found := trackManager.GetTrack(selected.TrackID)
+		trackTitle := ""
+		if found {
+			trackTitle = trackInfo.Title
+		}
 
 		// Start playing the selected track
 		if err := player.StartPlayer(cfg, appState, trackPath); err != nil {
@@ -239,8 +288,8 @@ var listShowCmd = &cobra.Command{
 		}
 
 		// Update the current track info in the app state
-		appState.CurrentTrackID = selected.Track.ID
-		appState.CurrentTrackTitle = selected.Track.Title
+		appState.CurrentTrackID = selected.TrackID
+		appState.CurrentTrackTitle = trackTitle
 		appState.IsPlaying = true
 		if err := state.SaveState(); err != nil {
 			log.Printf("warning: failed to save state: %v", err)
@@ -268,24 +317,34 @@ var listPlayCmd = &cobra.Command{
 			return
 		}
 
-		// No extra empty line here, as per your request.
+		// Initialize track manager to get metadata
+		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
+		if err != nil {
+			log.Fatalf("error initializing track manager: %v", err)
+		}
 
 		var tracksToPlay []playlist.TrackInfo // Keep track info for state update
 		var playlistFilePaths []string        // Paths to pass to mpv
 
 		// Collect all file paths and ensure they are downloaded
 		for i, track := range p.Tracks {
+			trackInfo, found := trackManager.GetTrack(track.ID)
+			trackTitle := fmt.Sprintf("ID: %s", track.ID)
+			if found {
+				trackTitle = trackInfo.Title
+			}
+
 			downloadedFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", track.ID))
 			if _, err := os.Stat(downloadedFilePath); os.IsNotExist(err) {
-				fmt.Printf("\n- track %d/%d \"%s\" is not stocked locally. downloading...\n", i+1, len(p.Tracks), track.Title)
-				stopSpinner := util.StartSpinner(fmt.Sprintf("\n- downloading \"%s\"", track.Title))
+				fmt.Printf("\n- track %d/%d \"%s\" is not stocked locally. downloading...\n", i+1, len(p.Tracks), trackTitle)
+				stopSpinner := util.StartSpinner(fmt.Sprintf("\n- downloading \"%s\"", trackTitle))
 				_, _, downloadErr := yt.DownloadTrack(cfg, track.ID) // yt.DownloadTrack returns (filePath, TrackInfo, error)
 				util.StopSpinner(stopSpinner)
 				if downloadErr != nil {
-					fmt.Printf("\n- warning: failed to download track \"%s\": %v. skipping from playlist.\n", track.Title, downloadErr)
+					fmt.Printf("\n- warning: failed to download track \"%s\": %v. skipping from playlist.\n", trackTitle, downloadErr)
 					continue // Skip this track if download fails
 				}
-				fmt.Printf("\n- downloaded \"%s\" to %s.\n", track.Title, downloadedFilePath)
+				fmt.Printf("\n- downloaded \"%s\" to %s.\n", trackTitle, downloadedFilePath)
 			}
 			tracksToPlay = append(tracksToPlay, track)
 			playlistFilePaths = append(playlistFilePaths, downloadedFilePath)
@@ -303,8 +362,14 @@ var listPlayCmd = &cobra.Command{
 
 		// Update state for the first track in the playlist
 		firstTrack := tracksToPlay[0]
+		firstTrackInfo, found := trackManager.GetTrack(firstTrack.ID)
+		firstTrackTitle := fmt.Sprintf("ID: %s", firstTrack.ID)
+		if found {
+			firstTrackTitle = firstTrackInfo.Title
+		}
+
 		appState.CurrentTrackID = firstTrack.ID
-		appState.CurrentTrackTitle = firstTrack.Title
+		appState.CurrentTrackTitle = firstTrackTitle
 		appState.DownloadedFilePath = playlistFilePaths[0]
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = playlistName
@@ -337,24 +402,34 @@ var listShuffleCmd = &cobra.Command{
 			return
 		}
 
-		// No extra empty line here, as per your request.
+		// Initialize track manager to get metadata
+		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
+		if err != nil {
+			log.Fatalf("error initializing track manager: %v", err)
+		}
 
 		var tracksToPlay []playlist.TrackInfo
 		var playlistFilePaths []string
 
 		// Collect all file paths and ensure they are downloaded
 		for i, track := range p.Tracks {
+			trackInfo, found := trackManager.GetTrack(track.ID)
+			trackTitle := fmt.Sprintf("ID: %s", track.ID)
+			if found {
+				trackTitle = trackInfo.Title
+			}
+
 			downloadedFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", track.ID))
 			if _, err := os.Stat(downloadedFilePath); os.IsNotExist(err) {
-				fmt.Printf("\n- track %d/%d \"%s\" is not stocked locally. downloading...\n", i+1, len(p.Tracks), track.Title)
-				stopSpinner := util.StartSpinner(fmt.Sprintf("\n- downloading \"%s\"", track.Title))
+				fmt.Printf("\n- track %d/%d \"%s\" is not stocked locally. downloading...\n", i+1, len(p.Tracks), trackTitle)
+				stopSpinner := util.StartSpinner(fmt.Sprintf("\n- downloading \"%s\"", trackTitle))
 				_, _, downloadErr := yt.DownloadTrack(cfg, track.ID)
 				util.StopSpinner(stopSpinner)
 				if downloadErr != nil {
-					fmt.Printf("\n- warning: failed to download track \"%s\": %v. skipping from playlist.\n", track.Title, downloadErr)
+					fmt.Printf("\n- warning: failed to download track \"%s\": %v. skipping from playlist.\n", trackTitle, downloadErr)
 					continue
 				}
-				fmt.Printf("\n- downloaded \"%s\" to %s.\n", track.Title, downloadedFilePath)
+				fmt.Printf("\n- downloaded \"%s\" to %s.\n", trackTitle, downloadedFilePath)
 			}
 			tracksToPlay = append(tracksToPlay, track)
 			playlistFilePaths = append(playlistFilePaths, downloadedFilePath)
@@ -379,8 +454,14 @@ var listShuffleCmd = &cobra.Command{
 
 		// Update state for the first track in the shuffled playlist
 		firstTrack := tracksToPlay[0]
+		firstTrackInfo, found := trackManager.GetTrack(firstTrack.ID)
+		firstTrackTitle := fmt.Sprintf("ID: %s", firstTrack.ID)
+		if found {
+			firstTrackTitle = firstTrackInfo.Title
+		}
+
 		appState.CurrentTrackID = firstTrack.ID
-		appState.CurrentTrackTitle = firstTrack.Title
+		appState.CurrentTrackTitle = firstTrackTitle
 		appState.DownloadedFilePath = playlistFilePaths[0]
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = playlistName

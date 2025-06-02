@@ -116,6 +116,18 @@ func processFile(file os.FileInfo, trackManager *tracks.Manager) error {
 		return fmt.Errorf("failed to read info file for %s: %w", videoID, err)
 	}
 
+	// Optimize the info.json file to remove unnecessary fields
+	if err := yt.OptimizeInfoJSON(cfg, videoID); err != nil {
+		log.Printf("warning: failed to optimize info.json for %s: %v", videoID, err)
+		// Continue processing even if optimization fails
+	}
+
+	// Re-read the optimized info.json
+	infoData, err = ioutil.ReadFile(infoPath)
+	if err != nil {
+		return fmt.Errorf("failed to read optimized info file for %s: %w", videoID, err)
+	}
+
 	var trackInfo yt.TrackInfo
 	if err := json.Unmarshal(infoData, &trackInfo); err != nil {
 		return fmt.Errorf("failed to parse info file for %s: %w", videoID, err)

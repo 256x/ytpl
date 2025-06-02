@@ -8,10 +8,11 @@ import (
 	"strings"
 	"sync/atomic"
 
-	player "ytpl/internal/player"
-	playertags "ytpl/internal/playertags"
-	state "ytpl/internal/state"
-	yt "ytpl/internal/yt"
+	"ytpl/internal/player"
+	"ytpl/internal/playertags"
+	"ytpl/internal/state"
+	"ytpl/internal/tracks"
+	"ytpl/internal/yt"
 
 	"github.com/spf13/cobra"
 )
@@ -94,20 +95,24 @@ func getBestAvailableTitle() string {
 		return "Unknown Track"
 	}
 
-	// Try to get MP3 tags first
-	audioInfo, readTagErr := playertags.ReadTagsFromMP3(appState.DownloadedFilePath, "", "")
-	if readTagErr == nil && audioInfo.Title != "" {
-		return audioInfo.Title
+	// Get track ID from file path
+	base := filepath.Base(appState.DownloadedFilePath)
+	trackID := strings.TrimSuffix(base, filepath.Ext(base))
+
+	// Initialize track manager
+	trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
+	if err != nil {
+		log.Printf("warning: failed to initialize track manager: %v", err)
+		return strings.TrimSuffix(base, filepath.Ext(base))
 	}
 
-	// Fallback to .info.json title
-	ytTrackInfo, ytInfoErr := yt.GetLocalTrackInfo(cfg, appState.CurrentTrackID)
-	if ytInfoErr == nil && ytTrackInfo != nil && ytTrackInfo.Title != "" {
-		return ytTrackInfo.Title
+	// Get track info from .tracks file
+	track, exists := trackManager.GetTrack(trackID)
+	if exists && track != nil {
+		return track.Title
 	}
 
 	// Fallback to filename
-	base := filepath.Base(appState.DownloadedFilePath)
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
@@ -142,10 +147,28 @@ func updateAppStateFromMpvStatus() {
             ytArtist = ""
         }
 
-        // Read MP3 tags (audioInfo will contain fallbacks if tags are missing)
-        audioInfo, readTagErr := playertags.ReadTagsFromMP3(currentFilePath, ytTitle, ytArtist)
-        if readTagErr != nil {
-            log.Printf("Warning: Failed to read MP3 tags for track %s during appState update: %v.\n", currentTrackID, readTagErr)
+        // Initialize track manager
+        trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
+        if err != nil {
+            log.Printf("warning: failed to initialize track manager: %v", err)
+            return
+        }
+
+        // Get track info from .tracks file
+        var audioInfo *playertags.AudioInfo
+        if track, exists := trackManager.GetTrack(currentTrackID); exists && track != nil {
+            audioInfo = &playertags.AudioInfo{
+                Title:  track.Title,
+                Artist: track.Uploader,
+            }
+            ytTitle = track.Title
+            ytArtist = track.Uploader
+        } else {
+            log.Printf("Warning: Could not find track %s in .tracks file\n", currentTrackID)
+            audioInfo = &playertags.AudioInfo{
+                Title:  ytTitle,
+                Artist: ytArtist,
+            }
         }
 
         // Determine the best display title based on priority:

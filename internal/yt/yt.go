@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	config "ytpl/internal/config" // Alias for internal/config
@@ -153,10 +154,16 @@ func DownloadTrack(cfg *config.Config, trackID string) (string, *TrackInfo, erro
 		return "", nil, fmt.Errorf("downloaded file not found at expected path: %s", downloadedFilePath)
 	}
 
+	// Optimize the info.json file to remove unnecessary fields
+	if err := OptimizeInfoJSON(cfg, trackID); err != nil {
+		// Non-fatal error, just log it
+		log.Printf("warning: failed to optimize info.json for %s: %v", trackID, err)
+	}
+
 	return downloadedFilePath, &downloadedTrackInfo, nil
 }
 
-// ListLocalTracks returns a list of all locally downloaded tracks.
+// ListLocalTracks returns a list of all locally downloaded tracks, sorted by title.
 func ListLocalTracks(cfg *config.Config) ([]*TrackInfo, error) {
 	files, err := filepath.Glob(filepath.Join(cfg.DownloadDir, "*.info.json"))
 	if err != nil {
@@ -174,7 +181,73 @@ func ListLocalTracks(cfg *config.Config) ([]*TrackInfo, error) {
 		tracks = append(tracks, track)
 	}
 
+	// Sort tracks by title (case-insensitive)
+	sort.Slice(tracks, func(i, j int) bool {
+		return strings.ToLower(tracks[i].Title) < strings.ToLower(tracks[j].Title)
+	})
+
 	return tracks, nil
+}
+
+// OptimizeInfoJSON optimizes the info.json file by keeping only necessary fields
+func OptimizeInfoJSON(cfg *config.Config, trackID string) error {
+	infoPath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.info.json", trackID))
+	
+	// Read the existing info.json
+	data, err := os.ReadFile(infoPath)
+	if err != nil {
+		return fmt.Errorf("failed to read info.json for optimization: %w", err)
+	}
+
+	// Parse into a map to access all fields
+	var infoMap map[string]interface{}
+	if err := json.Unmarshal(data, &infoMap); err != nil {
+		return fmt.Errorf("failed to parse info.json: %w", err)
+	}
+
+	// Define the fields we want to keep
+	keepFields := []string{
+		"id",
+		"title",
+		"uploader",
+		"creator",
+		"duration",
+		"release_year",
+		"upload_date",
+		"webpage_url",
+	}
+
+	// Create a new map with only the fields we want to keep
+	optimized := make(map[string]interface{})
+	for _, field := range keepFields {
+		if value, exists := infoMap[field]; exists {
+			optimized[field] = value
+		}
+	}
+
+	// Add some essential fields if they're missing but we can derive them
+	if _, exists := optimized["id"]; !exists {
+		optimized["id"] = trackID
+	}
+
+	// Write the optimized JSON back to the file
+	optimizedJSON, err := json.MarshalIndent(optimized, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal optimized info.json: %w", err)
+	}
+
+	// Write to a temporary file first, then rename atomically
+	tempPath := infoPath + ".tmp"
+	if err := os.WriteFile(tempPath, optimizedJSON, 0644); err != nil {
+		return fmt.Errorf("failed to write optimized info.json: %w", err)
+	}
+
+	// Atomic rename to replace the original file
+	if err := os.Rename(tempPath, infoPath); err != nil {
+		return fmt.Errorf("failed to replace original info.json: %w", err)
+	}
+
+	return nil
 }
 
 // GetLocalTrackInfo reads metadata for a local track from its .info.json file.

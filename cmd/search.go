@@ -31,12 +31,14 @@ var searchCmd = &cobra.Command{
 		// Show searching spinner with query
 		sanitizedQuery := strings.ReplaceAll(query, "\n", " ")
 		// Use line style for search
+		fmt.Println()
 		searchSpinner := util.NewSpinnerWithStyle(
 			fmt.Sprintf("searching '%s'...", sanitizedQuery),
 			util.StyleLine,
 		)
 		tracks, err := yt.SearchYouTube(cfg, query)
 		searchSpinner.Stop("")
+		fmt.Println()
 		if err != nil {
 			log.Fatalf("error searching youtube: %v", err)
 		}
@@ -94,6 +96,7 @@ var searchCmd = &cobra.Command{
 			// Download the track if not found locally
 			sanitizedTitle := strings.ReplaceAll(selectedTrack.Title, "\n", " ")
 			// Use line style for download
+			fmt.Println()
 			downloadSpinner := util.NewSpinnerWithStyle(
 				fmt.Sprintf("downloading '%s'...", sanitizedTitle),
 				util.StyleLine,
@@ -102,7 +105,7 @@ var searchCmd = &cobra.Command{
 			if err != nil {
 				downloadSpinner.StopWithError(fmt.Sprintf("failed to download '%s'", sanitizedTitle))
 			} else {
-				downloadSpinner.StopWithSuccess(fmt.Sprintf("downloaded '%s'!", sanitizedTitle))
+				downloadSpinner.Stop("")
 			}
 
 			if err != nil {

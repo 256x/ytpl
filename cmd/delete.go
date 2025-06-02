@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
-	"ytpl/internal/playertags"
 	"ytpl/internal/playlist"
+	"ytpl/internal/tracks"
 	"ytpl/internal/util"
 	"ytpl/internal/yt"
 
@@ -18,9 +19,10 @@ import (
 )
 
 type trackItem struct {
-	*yt.TrackInfo
-	Audio *playertags.AudioInfo
-	Path  string
+	Info         *yt.TrackInfo
+	Path         string
+	DisplayTitle string
+	DisplayText  string
 }
 
 var delCmd = &cobra.Command{
@@ -28,30 +30,48 @@ var delCmd = &cobra.Command{
 	Short: "Delete a downloaded track",
 	Args:  cobra.MaximumNArgs(1), // Optional query for filtering
 	Run: func(cmd *cobra.Command, args []string) {
-		// List all local tracks
-		tracks, err := yt.ListLocalTracks(cfg)
+		// Initialize track manager
+		trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("Error listing local tracks: %v", err)
+			log.Fatalf("failed to initialize track manager: %v", err)
 		}
 
-		var selectableTracks []trackItem
-		for _, track := range tracks {
-			// Get audio info
-			audioInfo, _ := playertags.ReadTagsFromMP3(
-				filepath.Join(cfg.DownloadDir, track.ID+".mp3"),
-				"", "",
-			)
+		// Get all tracks from the track manager and sort by title
+		trackList := trackManager.ListTracks()
+		if len(trackList) == 0 {
+			log.Fatal("no tracks found in .tracks file. Please run 'rebuild' command first.")
+		}
 
+		// Sort by title (case-insensitive)
+		sort.Slice(trackList, func(i, j int) bool {
+			return strings.ToLower(trackList[i].Title) < strings.ToLower(trackList[j].Title)
+		})
+
+		var selectableTracks []trackItem
+		for i, track := range trackList {
+			trackPath := filepath.Join(cfg.DownloadDir, track.ID+".mp3")
+
+			// Skip if the file doesn't exist
+			if _, err := os.Stat(trackPath); os.IsNotExist(err) {
+				log.Printf("warning: track file not found: %s", trackPath)
+				continue
+			}
+
+			durationStr := strings.Trim(util.FormatDuration(track.Duration), "[]")
+			displayText := fmt.Sprintf("%02d:[%s] - %s", i+1, durationStr, track.Title)
+
+			// Create a copy of the track to avoid referencing loop variable
+			trackCopy := track
 			selectableTracks = append(selectableTracks, trackItem{
-				TrackInfo: track,
-				Path:      filepath.Join(cfg.DownloadDir, track.ID+".mp3"),
-				Audio:     audioInfo,
+				Info:         &trackCopy,
+				Path:         trackPath,
+				DisplayTitle: track.Title,
+				DisplayText:  displayText,
 			})
 		}
 
 		// Show warning message
 		fmt.Println(util.Red("⚠️  warning: this will permanently delete the selected track."))
-		fmt.Println(util.Yellow("   select a track to delete (ctrl+c to cancel):"))
 		fmt.Println()
 
 		// Initialize fzf
@@ -66,30 +86,7 @@ var delCmd = &cobra.Command{
 		idxs, err := f.Find(
 			selectableTracks,
 			func(i int) string {
-				track := selectableTracks[i]
-				durationStr := ""
-				if track.Duration > 0 {
-					durationStr = strings.Trim(util.FormatDuration(track.Duration), "[]")
-				}
-
-				artist := "Unknown Artist"
-				if track.Audio != nil && track.Audio.Artist != "" {
-					artist = track.Audio.Artist
-				} else if track.Uploader != "" {
-					artist = track.Uploader
-				}
-
-				title := "Unknown Title"
-				if track.Title != "" {
-					title = track.Title
-				}
-
-				display := fmt.Sprintf("%s - %s [%s]",
-					title,
-					artist,
-					durationStr,
-				)
-				return display
+				return selectableTracks[i].DisplayText
 			},
 		)
 
@@ -109,7 +106,7 @@ var delCmd = &cobra.Command{
 		selected := selectableTracks[idxs[0]]
 
 		// Show confirmation
-		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? (y/N) ", selected.Title)
+		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? (y/N) ", selected.Info.Title)
 		confirmed, err := util.Confirm(confirmMsg)
 		if err != nil {
 			log.Fatalf("Error getting confirmation: %v", err)
@@ -119,14 +116,29 @@ var delCmd = &cobra.Command{
 			return
 		}
 
-		// Remove from playlists first
+		// Re-initialize track manager for removal
+		trackManager, err = tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
+		if err != nil {
+			log.Printf("warning: failed to initialize track manager: %v", err)
+		}
+
+		// Remove from .tracks first
+		if trackManager != nil {
+			if err := trackManager.RemoveTrack(selected.Info.ID); err != nil {
+				log.Printf("warning: failed to remove track from .tracks: %v", err)
+			} else {
+				fmt.Println(util.Green("\n- removed from track library"))
+			}
+		}
+
+		// Remove from playlists
 		var removedFromPlaylists []string
 		playlists, err := playlist.ListAllPlaylists()
 		if err != nil {
 			log.Printf("warning: failed to list playlists: %v", err)
 		} else {
 			for _, plName := range playlists {
-				err := playlist.RemoveTrack(plName, selected.ID)
+				err := playlist.RemoveTrack(plName, selected.Info.ID)
 				if err != nil && !strings.Contains(err.Error(), "not found") {
 					log.Printf("warning: failed to remove track from playlist %s: %v", plName, err)
 				} else if err == nil {
