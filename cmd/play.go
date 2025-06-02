@@ -152,6 +152,4 @@ var playCmd = &cobra.Command{
 }
 
 // init initializes the play command
-func init() {
-	rootCmd.AddCommand(playCmd)
-}
+// Note: playCmd is added to rootCmd in root.go

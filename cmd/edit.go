@@ -168,6 +168,4 @@ var editCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(editCmd)
-}
+// Note: editCmd is added to rootCmd in root.go
