@@ -56,7 +56,7 @@ var delCmd = &cobra.Command{
 
 		// Initialize fzf
 		f, err := fuzzyfinder.New(
-			fuzzyfinder.WithPrompt("❯ "),
+			fuzzyfinder.WithPrompt("[ delete ] > "),
 		)
 		if err != nil {
 			log.Fatalf("Error initializing fzf: %v", err)

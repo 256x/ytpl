@@ -32,7 +32,7 @@ var listCmd = &cobra.Command{
 			}
 
 			if len(playlistNames) == 0 {
-				fmt.Println("\n- no playlists found. use 'ytpl list make <name>' to create one.\n")
+				fmt.Println("\n- no playlists found. use 'ytpl list create <name>' to create one.\n")
 				return
 			}
 
@@ -80,8 +80,8 @@ var listCmd = &cobra.Command{
 	},
 }
 
-var listMakeCmd = &cobra.Command{
-	Use:   "make <playlist_name>",
+var listCreateCmd = &cobra.Command{
+	Use:   "create <playlist_name>",
 	Short: "create a new playlist",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -89,7 +89,7 @@ var listMakeCmd = &cobra.Command{
 		if err := playlist.MakePlaylist(name); err != nil {
 			log.Fatalf("error creating playlist '%s': %v", name, err)
 		}
-		fmt.Printf("\n- playlist '%s' created successfully.\n", name)
+		fmt.Printf("\n- playlist '%s' created successfully.\n\n", name)
 	},
 }
 

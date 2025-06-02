@@ -4,17 +4,23 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"ytpl/internal/player"
 	"ytpl/internal/state"
+	trackpkg "ytpl/internal/tracks"
 	"ytpl/internal/util"
 	"ytpl/internal/yt"
 
 	fuzzyfinder "github.com/koki-develop/go-fzf"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	log.SetOutput(os.Stderr)
+}
 
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
@@ -23,9 +29,14 @@ var searchCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		query := strings.Join(args, " ")
 		// Show searching spinner with query
-		searchSpinner := util.StartSpinner(fmt.Sprintf("- searching '%s'...", query))
+		sanitizedQuery := strings.ReplaceAll(query, "\n", " ")
+		// Use line style for search
+		searchSpinner := util.NewSpinnerWithStyle(
+			fmt.Sprintf("searching '%s'...", sanitizedQuery),
+			util.StyleLine,
+		)
 		tracks, err := yt.SearchYouTube(cfg, query)
-		util.StopSpinner(searchSpinner)
+		searchSpinner.Stop("")
 		if err != nil {
 			log.Fatalf("error searching youtube: %v", err)
 		}
@@ -81,12 +92,37 @@ var searchCmd = &cobra.Command{
 			finalTrackInfo.Title = selectedTrack.Title
 		} else {
 			// Download the track if not found locally
-			downloadSpinner := util.StartSpinner(fmt.Sprintf("- downloading '%s'...", selectedTrack.Title))
+			sanitizedTitle := strings.ReplaceAll(selectedTrack.Title, "\n", " ")
+			// Use line style for download
+			downloadSpinner := util.NewSpinnerWithStyle(
+				fmt.Sprintf("downloading '%s'...", sanitizedTitle),
+				util.StyleLine,
+			)
 			downloadedFilePath, finalTrackInfo, err = yt.DownloadTrack(cfg, selectedTrack.ID)
-			util.StopSpinner(downloadSpinner)
+			if err != nil {
+				downloadSpinner.StopWithError(fmt.Sprintf("failed to download '%s'", sanitizedTitle))
+			} else {
+				downloadSpinner.StopWithSuccess(fmt.Sprintf("downloaded '%s'!", sanitizedTitle))
+			}
 
 			if err != nil {
 				log.Fatalf("error downloading track: %v", err)
+			}
+		}
+
+		// Debug log for DownloadDir
+		log.Printf("DownloadDir: %s", cfg.DownloadDir)
+
+		// Initialize track manager
+		// Use the parent of DownloadDir as the base directory for tracks
+		tracksDir := filepath.Dir(cfg.DownloadDir)
+		trackManager, err := trackpkg.NewManager("", tracksDir)
+		if err != nil {
+			log.Printf("warning: failed to initialize track manager: %v", err)
+		} else {
+			// Add downloaded track to the library
+			if err := trackManager.AddTrack(*finalTrackInfo); err != nil {
+				log.Printf("warning: failed to add track to library: %v", err)
 			}
 		}
 

@@ -71,7 +71,7 @@ func init() {
 
 	// List command and its subcommands
 	rootCmd.AddCommand(listCmd)
-	listCmd.AddCommand(listMakeCmd)
+	listCmd.AddCommand(listCreateCmd)
 	listCmd.AddCommand(listAddCmd)
 	listCmd.AddCommand(listRemoveCmd)
 	listCmd.AddCommand(listDelCmd)
