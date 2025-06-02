@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2025-06-03
+
+### Fixed
+- Fixed duplicate command registration in help message
+- Removed redundant command initializations in play.go and edit.go
+
 ## [0.1.5] - 2025-06-03
 
 ### Changed
