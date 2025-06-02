@@ -10,6 +10,7 @@
 - YouTubeからの音楽検索、ダウンロード、再生
 - ローカルトラックの管理
 - プレイリストの作成・管理
+- トラックメタデータの編集（タイトル、アーティスト名など）
 - シャッフル再生
 - 再生状態の確認と制御
 
@@ -78,6 +79,12 @@ ytpl search "検索クエリ"
 # 例: ytpl search "https://www.youtube.com/watch?v=動画ID"
 # YouTubeの検索と同様に、キーワードやURLを自由に入力できます。
 
+# トラックのメタデータを編集（タイトル、アーティスト名など）
+ytpl edit [検索クエリ]
+# 例:
+# ytpl edit                  # 対話型でトラックを選択して編集
+# ytpl edit "曲名"          # 特定のトラックを検索して編集
+
 # 現在の再生状態を表示
 ytpl status
 
@@ -113,26 +120,26 @@ ytpl shuffle
 ytpl list
 
 # 新しいプレイリストを作成
-ytpl list make playlist
+ytpl list create プレイリスト名
 
 # 現在再生中の曲をプレイリストに追加
 # 指定したプレイリストが存在しない場合は新規作成されます
-ytpl list add playlist
+ytpl list add プレイリスト名
 
 # 現在再生中の曲をプレイリストから削除
-ytpl list remove playlist
+ytpl list remove プレイリスト名
 
 # プレイリストを削除
-ytpl list del playlist
+ytpl list del プレイリスト名
 
 # プレイリストの内容を表示
-ytpl list show playlist
+ytpl list show プレイリスト名
 
-# プレイリストを再生
-ytpl list play playlist
+# プレイリストを再生（順番通り）
+ytpl list play プレイリスト名
 
 # プレイリストをシャッフル再生
-ytpl list shuffle playlist
+ytpl list shuffle プレイリスト名
 ```
 
 ### トラック管理
@@ -141,6 +148,9 @@ ytpl list shuffle playlist
 # ダウンロードしたトラックを削除
 # 削除したトラックはすべてのプレイリストからも自動的に削除されます
 ytpl delete
+
+# トラックのメタデータを編集（タイトル、アーティスト名など）
+ytpl edit [検索クエリ]
 
 # ボリュームを調整 (0-100)
 ytpl volume 80

@@ -9,6 +9,7 @@
 - Download and play music from YouTube
 - Manage local tracks
 - Create and manage playlists
+- Edit track metadata (titles, artists, etc.)
 - Shuffle playback
 - Check and control playback status
 
@@ -80,6 +81,12 @@ ytpl search [query]
 # ytpl search "Live Song Title"            # Search for live recordings
 # ytpl search "Cover Song Title"           # Search for cover videos
 
+# Edit track metadata (title, artist, etc.)
+ytpl edit [query]
+# Examples:
+# ytpl edit                  # Interactive track selection
+# ytpl edit "Song Title"    # Search and edit specific track
+
 # Play locally saved tracks
 ytpl play [query]
 # Examples:
@@ -135,7 +142,7 @@ ytpl --version or ytpl -v
 ytpl list
 
 # Create a new playlist
-ytpl list make MyPlaylist
+ytpl list create MyPlaylist
 
 # Add currently playing track to playlist
 # If the specified playlist doesn't exist, it will be created
@@ -147,8 +154,10 @@ ytpl list remove MyPlaylist
 # Delete playlist
 ytpl list del MyPlaylist
 
+# Show playlist contents
+ytpl list show MyPlaylist
 
-# Play playlist
+# Play playlist (in order)
 ytpl list play MyPlaylist
 
 # Shuffle play playlist
@@ -161,6 +170,9 @@ ytpl list shuffle MyPlaylist
 # Delete downloaded tracks
 # Deleted tracks are automatically removed from all playlists
 ytpl delete
+
+# Edit track metadata (title, artist, etc.)
+ytpl edit [query]
 
 # Adjust volume (0-100)
 ytpl volume 80

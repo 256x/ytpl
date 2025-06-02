@@ -106,7 +106,7 @@ var delCmd = &cobra.Command{
 		selected := selectableTracks[idxs[0]]
 
 		// Show confirmation
-		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? (y/N) ", selected.Info.Title)
+		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? [y/N] ", selected.Info.Title)
 		confirmed, err := util.Confirm(confirmMsg)
 		if err != nil {
 			log.Fatalf("Error getting confirmation: %v", err)

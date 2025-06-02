@@ -170,16 +170,16 @@ var listDelCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		confirm, err := util.Confirm(fmt.Sprintf("\n- are you sure you want to delete playlist '%s'? (y/N) ", name))
+		confirm, err := util.Confirm(fmt.Sprintf("\n- delete '%s'?", name))
 		if err != nil || !confirm {
 			fmt.Println("\n- playlist deletion cancelled.\n")
 			return
 		}
 
 		if err := playlist.DeletePlaylist(name); err != nil {
-			log.Fatalf("Error deleting playlist '%s': %v", name, err)
+			log.Fatalf("Error deleting playlist '%s': %v\n", name, err)
 		}
-		fmt.Printf("\n- playlist '%s' deleted successfully.\n", name)
+		fmt.Printf("\n- playlist '%s' deleted successfully.\n\n", name)
 	},
 }
 
