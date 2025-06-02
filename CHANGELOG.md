@@ -19,7 +19,6 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Added new `edit` command for modifying track titles
-- Added track metadata editor (accessible via 'e' key in play command)
 - Added `.info.json` optimization to reduce file size
 - Added support for editing track metadata (title, artist, album, etc.)
 
