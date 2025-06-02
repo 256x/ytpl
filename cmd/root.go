@@ -3,12 +3,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
-	"time"
 
 	"ytpl/internal/config"
 	"ytpl/internal/player"
@@ -85,25 +83,11 @@ func init() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		log.Println("received interrupt signal. shutting down ytpl...")
 		if appState != nil && appState.PID != 0 {
-			if err := player.StopPlayer(appState); err != nil {
-				log.Printf("error stopping player on shutdown: %v", err)
-			}
+			_ = player.StopPlayer(appState)
 		}
 		os.Exit(0)
 	}()
-
-	// Configure log output to a file to avoid interfering with TUI.
-	logFilePath := filepath.Join(os.TempDir(), "ytpl_debug.log")
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	if err == nil {
-		log.SetOutput(logFile)
-		log.Printf("--- ytpl starting: %s ---\n", time.Now().Format(time.RFC3339)) // ログメッセージは大文字のまま
-		log.Printf("Log file: %s\n", logFilePath)
-	} else {
-		fmt.Fprintf(os.Stderr, "WARNING: Failed to open log file %s: %v. Logging to stderr.\n", logFilePath, err)
-	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -112,12 +96,10 @@ func initConfig() error {
 	cfg, err = config.LoadConfig()
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println("Config file not found. Creating a default config.")
 			defaultConfigPath, pathErr := config.GetConfigPath()
 			if pathErr != nil {
 				return fmt.Errorf("failed to determine default config path: %w", pathErr)
 			}
-			log.Printf("Creating a default config at %s\n", defaultConfigPath)
 			if writeErr := os.MkdirAll(filepath.Dir(defaultConfigPath), 0755); writeErr != nil {
 				return fmt.Errorf("failed to create config directory: %w", writeErr)
 			}
@@ -135,7 +117,6 @@ func initConfig() error {
 
 	appState, err = state.LoadState(cfg)
 	if err != nil {
-		log.Printf("Error loading application state: %v. Starting with empty state.", err)
 		appState = &state.PlayerState{
 			Volume:        cfg.DefaultVolume,
 			IPCSocketPath: cfg.PlayerIPCSocketPath,

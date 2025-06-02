@@ -4,7 +4,6 @@ package player
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -35,11 +34,8 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 	// If player is already running, stop it first.
 	// This ensures only one mpv instance is controlled by ytpl for single playback.
 	if s.PID != 0 {
-		log.Printf("player already running (pid: %d). stopping it first...", s.PID)
-		if err := StopPlayer(s); err != nil {
-			log.Printf("warning: could not stop existing player: %v", err)
-			// Continue, as the old process might be gone already
-		}
+		// Ignore error as the old process might be gone already
+		_ = StopPlayer(s)
 	}
 
 	// Use saved volume if available, otherwise use default volume
@@ -86,11 +82,7 @@ func StartPlayer(cfg *config.Config, s *state.PlayerState, filePath string) erro
 	time.Sleep(500 * time.Millisecond)
 
 	// Verify socket is created and reachable
-	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second)
-	if err != nil {
-		log.Printf("warning: mpv ipc socket not ready or failed to connect: %v", err)
-		// Optionally, kill the mpv process if socket connection fails consistently
-	} else {
+	if conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second); err == nil {
 		conn.Close()
 	}
 
@@ -105,10 +97,8 @@ func SendCommand(s *state.PlayerState, command []interface{}) error {
 
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 1*time.Second)
 	if err != nil {
-		// Log this warning to the file, not console, to keep tui clean.
-		log.Printf("warning: failed to connect to mpv ipc socket (pid %d): %v. assuming player is no longer running.\n", s.PID, err)
 		s.PID = 0 // Clear pid if connection fails
-		state.SaveState() // Save updated state
+		_ = state.SaveState() // Save updated state, ignore error
 		return fmt.Errorf("player not reachable, possibly stopped")
 	}
 	defer conn.Close()
@@ -131,9 +121,8 @@ func GetProperty(s *state.PlayerState, property string) (interface{}, error) {
 
 	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 1*time.Second)
 	if err != nil {
-		log.Printf("warning: failed to connect to mpv ipc socket (pid %d) for property '%s': %v. assuming player is no longer running.\n", s.PID, property, err)
 		s.PID = 0
-		state.SaveState()
+		_ = state.SaveState()
 		return nil, fmt.Errorf("player not reachable, possibly stopped")
 	}
 	defer conn.Close()
@@ -177,9 +166,8 @@ func GetCurrentlyPlayingTrackInfo(s *state.PlayerState) (string, int, error) {
 	// Get current playlist position
 	playlistPos, err := GetProperty(s, "playlist-pos") // "playlist-pos" gives 0-indexed position
 	if err != nil {
-		// This might fail if not playing from a playlist, so log and default
-		log.Printf("warning: could not get 'playlist-pos' from mpv: %v", err)
-		return filePathStr, -1, nil // Return file path, but -1 for position
+		// Not playing from a playlist, return file path with -1 position
+		return filePathStr, -1, nil
 	}
 	playlistPosInt, ok := playlistPos.(float64) // mpv returns numbers as float64 via json ipc
 	if !ok {
@@ -193,19 +181,14 @@ func GetCurrentlyPlayingTrackInfo(s *state.PlayerState) (string, int, error) {
 // StopPlayer sends a quit command to mpv and cleans up state.
 func StopPlayer(s *state.PlayerState) error {
 	if s.PID == 0 {
-		log.Printf("player is not running.")
 		return nil
 	}
 
-	err := SendCommand(s, []interface{}{"quit"})
-	if err != nil {
-		log.Printf("warning: failed to send quit command to mpv via ipc (pid %d): %v. trying to kill process...", s.PID, err)
-
-		// FindProcess(s.PID) should only be called if s.PID is valid
+	if err := SendCommand(s, []interface{}{"quit"}); err != nil {
+		// Try to find and kill the process directly
 		process, procErr := os.FindProcess(s.PID)
 		if procErr != nil {
-			log.Printf("error: could not find mpv process with pid %d: %v. it might have already exited.", s.PID, procErr)
-			// Process might already be gone, just clean up state.
+			// Process might already be gone, just clean up state
 		} else {
 			// Check if process is still alive before killing
 			// On Unix, signal 0 can be used to check if a process exists
@@ -213,21 +196,16 @@ func StopPlayer(s *state.PlayerState) error {
 				if killErr := process.Kill(); killErr != nil {
 					return fmt.Errorf("failed to kill mpv process with pid %d: %w", s.PID, killErr)
 				}
-				log.Printf("killed mpv process with pid %d.", s.PID)
-			} else {
-				log.Printf("mpv process with pid %d already exited.", s.PID)
 			}
 		}
 	} else {
 		// Ipc quit command sent successfully, give mpv a moment to shut down gracefully
 		time.Sleep(200 * time.Millisecond)
-		log.Printf("sent quit command to mpv (pid %d).", s.PID)
 	}
 
 	// Clean up socket file
 	if s.IPCSocketPath != "" {
 		os.Remove(s.IPCSocketPath)
-		log.Printf("removed ipc socket file: %s", s.IPCSocketPath)
 	}
 
 	// Clear player state AFTER attempting to stop process and clean up socket
@@ -273,10 +251,8 @@ func LoadPlaylistIntoPlayer(cfg *config.Config, s *state.PlayerState, filePaths 
 
 	// If player is already running, stop it first (to clear old playlist/state)
 	if s.PID != 0 {
-		log.Printf("player already running (pid: %d). stopping it to load new playlist...", s.PID)
-		if err := StopPlayer(s); err != nil {
-			log.Printf("warning: could not stop existing player: %v", err)
-		}
+		// Ignore error as the old process might be gone already
+		_ = StopPlayer(s)
 	}
 
 	// Use saved volume if available, otherwise use default volume
@@ -332,11 +308,7 @@ func LoadPlaylistIntoPlayer(cfg *config.Config, s *state.PlayerState, filePaths 
 	time.Sleep(500 * time.Millisecond) // Give mpv time to start and create the socket
 
 	// Verify socket is created and reachable
-	conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second)
-	if err != nil {
-		log.Printf("warning: mpv ipc socket not ready or failed to connect after playlist load: %v\n", err)
-		// Optionally, kill the mpv process if socket connection fails consistently
-	} else {
+	if conn, err := net.DialTimeout("unix", s.IPCSocketPath, 2*time.Second); err == nil {
 		conn.Close()
 	}
 

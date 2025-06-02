@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,9 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	log.SetOutput(os.Stderr)
-}
 
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
@@ -31,16 +27,15 @@ var searchCmd = &cobra.Command{
 		// Show searching spinner with query
 		sanitizedQuery := strings.ReplaceAll(query, "\n", " ")
 		// Use line style for search
-		fmt.Println()
 		searchSpinner := util.NewSpinnerWithStyle(
 			fmt.Sprintf("searching '%s'...", sanitizedQuery),
 			util.StyleLine,
 		)
 		tracks, err := yt.SearchYouTube(cfg, query)
 		searchSpinner.Stop("")
-		fmt.Println()
 		if err != nil {
-			log.Fatalf("error searching youtube: %v", err)
+			fmt.Fprintf(os.Stderr, "Error searching YouTube: %v\n", err)
+			os.Exit(1)
 		}
 
 		if len(tracks) == 0 {
@@ -51,7 +46,8 @@ var searchCmd = &cobra.Command{
 		// Initialize fzf
 		f, err := fuzzyfinder.New()
 		if err != nil {
-			log.Fatalf("error initializing fzf: %v", err)
+			fmt.Fprintf(os.Stderr, "Error initializing fzf: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Show fzf prompt with basic info
@@ -70,12 +66,14 @@ var searchCmd = &cobra.Command{
 				fmt.Println("\n- search cancelled.\n")
 				return
 			}
-			log.Fatalf("error running fzf: %v", err)
+			fmt.Fprintf(os.Stderr, "Error running fzf: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Get the selected track
 		if len(idxs) == 0 {
-			log.Fatalf("no track selected")
+			fmt.Fprintln(os.Stderr, "No track selected")
+			os.Exit(1)
 		}
 		selectedTrack := tracks[idxs[0]]
 
@@ -86,7 +84,6 @@ var searchCmd = &cobra.Command{
 
 		if err == nil {
 			// Use existing local file
-			log.Printf("using existing local track: %s", selectedTrack.Title)
 			downloadedFilePath = filepath.Join(cfg.DownloadDir, selectedTrack.ID+".mp3")
 			// Use the local track info but preserve the title from search results
 			// as it might be more up-to-date
@@ -96,7 +93,6 @@ var searchCmd = &cobra.Command{
 			// Download the track if not found locally
 			sanitizedTitle := strings.ReplaceAll(selectedTrack.Title, "\n", " ")
 			// Use line style for download
-			fmt.Println()
 			downloadSpinner := util.NewSpinnerWithStyle(
 				fmt.Sprintf("downloading '%s'...", sanitizedTitle),
 				util.StyleLine,
@@ -109,28 +105,22 @@ var searchCmd = &cobra.Command{
 			}
 
 			if err != nil {
-				log.Fatalf("error downloading track: %v", err)
+				fmt.Fprintf(os.Stderr, "Error downloading track: %v\n", err)
+				os.Exit(1)
 			}
 		}
 
-		// Debug log for DownloadDir
-		log.Printf("DownloadDir: %s", cfg.DownloadDir)
-
 		// Initialize track manager
-		// Use the parent of DownloadDir as the base directory for tracks
 		tracksDir := filepath.Dir(cfg.DownloadDir)
 		trackManager, err := trackpkg.NewManager("", tracksDir)
-		if err != nil {
-			log.Printf("warning: failed to initialize track manager: %v", err)
-		} else {
+		if err == nil {
 			// Add downloaded track to the library
-			if err := trackManager.AddTrack(*finalTrackInfo); err != nil {
-				log.Printf("warning: failed to add track to library: %v", err)
-			}
+			_ = trackManager.AddTrack(*finalTrackInfo)
 		}
 
 		if err := player.StartPlayer(cfg, appState, downloadedFilePath); err != nil {
-			log.Fatalf("error starting player: %v", err)
+			fmt.Fprintf(os.Stderr, "Error starting player: %v\n", err)
+			os.Exit(1)
 		}
 
 		appState.CurrentTrackID = finalTrackInfo.ID
@@ -139,9 +129,8 @@ var searchCmd = &cobra.Command{
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = ""
 
-		if err := state.SaveState(); err != nil {
-			log.Printf("\n- error saving state: %v\n", err)
-		}
+		// Ignore error when saving state
+		_ = state.SaveState()
 
 		// Show status after starting player
 		ShowStatus()

@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -49,7 +48,7 @@ func ShowStatus() {
 	}
 
 	if appState.PID == 0 {
-		fmt.Println("\n- no track playing (mpv might have exited).\n")
+		fmt.Println("No track playing")
 		atomic.StoreInt32(&isFirstOutput, 0)
 		return
 	}
@@ -60,7 +59,7 @@ func ShowStatus() {
 
 	// Re-check appState.PID after update, as it might have become 0 if mpv exited
 	if appState.PID == 0 {
-		fmt.Println("\n- no track playing (mpv might have exited).\n")
+		fmt.Println("No track playing")
 		return
 	}
 
@@ -102,7 +101,6 @@ func getBestAvailableTitle() string {
 	// Initialize track manager
 	trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
 	if err != nil {
-		log.Printf("warning: failed to initialize track manager: %v", err)
 		return strings.TrimSuffix(base, filepath.Ext(base))
 	}
 
@@ -121,7 +119,6 @@ func getBestAvailableTitle() string {
 func updateAppStateFromMpvStatus() {
     currentFilePath, currentPlaylistPos, err := player.GetCurrentlyPlayingTrackInfo(appState)
     if err != nil {
-        log.Printf("Error getting real-time track info from player for appState update: %v. Sticking to stored state.", err)
         if appState.PID != 0 && strings.Contains(err.Error(), "player not reachable") {
             player.StopPlayer(appState)
         }
@@ -142,7 +139,6 @@ func updateAppStateFromMpvStatus() {
                 ytArtist = ytTrackInfo.Creator
             }
         } else {
-            log.Printf("Warning: Could not read info.json for track %s during appState update: %v.\n", currentTrackID, err)
             ytTitle = strings.TrimSuffix(fileName, filepath.Ext(fileName)) // Fallback to filename
             ytArtist = ""
         }
@@ -150,7 +146,6 @@ func updateAppStateFromMpvStatus() {
         // Initialize track manager
         trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
         if err != nil {
-            log.Printf("warning: failed to initialize track manager: %v", err)
             return
         }
 
@@ -164,7 +159,6 @@ func updateAppStateFromMpvStatus() {
             ytTitle = track.Title
             ytArtist = track.Uploader
         } else {
-            log.Printf("Warning: Could not find track %s in .tracks file\n", currentTrackID)
             audioInfo = &playertags.AudioInfo{
                 Title:  ytTitle,
                 Artist: ytArtist,

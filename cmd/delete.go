@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -33,13 +32,15 @@ var delCmd = &cobra.Command{
 		// Initialize track manager
 		trackManager, err := tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("failed to initialize track manager: %v", err)
+			fmt.Fprintf(os.Stderr, "Error initializing track manager: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Get all tracks from the track manager and sort by title
 		trackList := trackManager.ListTracks()
 		if len(trackList) == 0 {
-			log.Fatal("no tracks found in .tracks file. Please run 'rebuild' command first.")
+			fmt.Fprintln(os.Stderr, "No tracks found. Please run 'rebuild' command first.")
+			os.Exit(1)
 		}
 
 		// Sort by title (case-insensitive)
@@ -53,7 +54,6 @@ var delCmd = &cobra.Command{
 
 			// Skip if the file doesn't exist
 			if _, err := os.Stat(trackPath); os.IsNotExist(err) {
-				log.Printf("warning: track file not found: %s", trackPath)
 				continue
 			}
 
@@ -79,7 +79,8 @@ var delCmd = &cobra.Command{
 			fuzzyfinder.WithPrompt("[ delete ] > "),
 		)
 		if err != nil {
-			log.Fatalf("Error initializing fzf: %v", err)
+			fmt.Fprintf(os.Stderr, "Error initializing fzf: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Show fzf prompt
@@ -95,7 +96,8 @@ var delCmd = &cobra.Command{
 				fmt.Println(util.Yellow("\n- deletion cancelled\n"))
 				return
 			}
-			log.Fatalf(util.Error("Error selecting track: %v"), err)
+			fmt.Fprintf(os.Stderr, "Error selecting track: %v\n", err)
+			os.Exit(1)
 		}
 
 		if len(idxs) == 0 {
@@ -109,7 +111,8 @@ var delCmd = &cobra.Command{
 		confirmMsg := fmt.Sprintf("- are you sure you want to delete '%s'? [y/N] ", selected.Info.Title)
 		confirmed, err := util.Confirm(confirmMsg)
 		if err != nil {
-			log.Fatalf("Error getting confirmation: %v", err)
+			fmt.Fprintf(os.Stderr, "Error getting confirmation: %v\n", err)
+			os.Exit(1)
 		}
 		if !confirmed {
 			fmt.Println("\n- deletion cancelled\n")
@@ -119,14 +122,14 @@ var delCmd = &cobra.Command{
 		// Re-initialize track manager for removal
 		trackManager, err = tracks.NewManager(filepath.Dir(cfg.DownloadDir), cfg.DownloadDir)
 		if err != nil {
-			log.Printf("warning: failed to initialize track manager: %v", err)
+			fmt.Fprintf(os.Stderr, "Warning: failed to initialize track manager: %v\n", err)
 		}
 
 		// Remove from .tracks first
 		var removeTrackErr error
 		if trackManager != nil {
 			if err := trackManager.RemoveTrack(selected.Info.ID); err != nil {
-				log.Printf("warning: failed to remove track from .tracks: %v", err)
+				fmt.Fprintf(os.Stderr, "Warning: failed to remove track from .tracks: %v\n", err)
 				removeTrackErr = err
 			} else {
 				fmt.Println(util.Green("\n- removed from track library"))
@@ -139,7 +142,7 @@ var delCmd = &cobra.Command{
 		// Remove from all playlists
 		removedFromPlaylists, err := playlist.RemoveTrackFromAllPlaylists(selected.Info.ID)
 		if err != nil {
-			log.Printf("warning: failed to remove track from playlists: %v", err)
+			fmt.Fprintf(os.Stderr, "Warning: failed to remove track from playlists: %v\n", err)
 		} else if len(removedFromPlaylists) > 0 {
 			fmt.Println(util.Green("\n- removed from playlists:"))
 			for _, plName := range removedFromPlaylists {
@@ -149,7 +152,8 @@ var delCmd = &cobra.Command{
 
 		// If there was an error removing from .tracks, return early
 		if removeTrackErr != nil {
-			log.Fatalf("failed to remove track: %v", removeTrackErr)
+			fmt.Fprintf(os.Stderr, "Failed to remove track: %v\n", removeTrackErr)
+			os.Exit(1)
 		}
 
 		// Delete files
@@ -162,9 +166,7 @@ var delCmd = &cobra.Command{
 		var deletedFiles []string
 		for _, file := range filesToDelete {
 			if _, err := os.Stat(file); err == nil {
-				if err := os.Remove(file); err != nil {
-					log.Printf("error deleting %s: %v", file, err)
-				} else {
+				if err := os.Remove(file); err == nil {
 					deletedFiles = append(deletedFiles, file)
 				}
 			}

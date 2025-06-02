@@ -39,7 +39,7 @@ func Init(dir string) {
 
 // getPlaylistFilePath returns the full path for a given playlist name.
 func getPlaylistFilePath(name string) string {
-	log.Printf("[debug] getPlaylistFilePath called for: %s", name)
+
 	sanitizedName := strings.ReplaceAll(name, string(filepath.Separator), "_")
 	sanitizedName = strings.ReplaceAll(sanitizedName, "..", "__")
 	// Remove .ytpl extension if already present to avoid double extension
@@ -51,7 +51,7 @@ func getPlaylistFilePath(name string) string {
 // Each line in the file should contain a single track ID.
 // It tries to load .ytpl file first, and falls back to .txt if not found.
 func LoadPlaylist(name string) (*Playlist, error) {
-	log.Printf("[debug] LoadPlaylist called for: %s", name)
+
 	// First try with .ytpl extension
 	path := getPlaylistFilePath(name)
 	_, err := os.Stat(path)
@@ -96,7 +96,7 @@ func LoadPlaylist(name string) (*Playlist, error) {
 // Each line in the file will contain a single track ID.
 // It always saves with .ytpl extension and removes any old .txt version.
 func SavePlaylist(p *Playlist) error {
-	log.Printf("[debug] SavePlaylist called for: %s", p.Name)
+
 	var sb strings.Builder
 	for _, track := range p.Tracks {
 		sb.WriteString(track.ID)
@@ -147,24 +147,23 @@ func AddTrack(playlistName string, track TrackInfo) error {
 // RemoveTrackFromAllPlaylists removes a track from all playlists by its ID
 // Returns the names of playlists from which the track was removed
 func RemoveTrackFromAllPlaylists(trackID string) ([]string, error) {
-	log.Printf("[debug] RemoveTrackFromAllPlaylists called for trackID: %s", trackID)
+
 	playlists, err := ListAllPlaylists()
 	if err != nil {
-		log.Printf("[error] Failed to list playlists: %v", err)
+
 		return nil, fmt.Errorf("failed to list playlists: %w", err)
 	}
 
-	log.Printf("[debug] Found %d playlists to check", len(playlists))
+
 	var removedFrom []string
-	for i, name := range playlists {
-		log.Printf("[debug] Checking playlist %d/%d: %s", i+1, len(playlists), name)
-		log.Printf("[debug] Loading playlist: %s", name)
+	for _, name := range playlists {
+
 		p, err := LoadPlaylist(name)
 		if err != nil {
-			log.Printf("[warning] Failed to load playlist %s: %v", name, err)
+
 			continue
 		}
-		log.Printf("[debug] Loaded playlist %s with %d tracks", name, len(p.Tracks))
+
 
 		var newTracks []TrackInfo
 		removed := false
@@ -178,15 +177,15 @@ func RemoveTrackFromAllPlaylists(trackID string) ([]string, error) {
 
 		if removed {
 			p.Tracks = newTracks
-			log.Printf("[debug] Saving updated playlist %s", name)
+
 			if err := SavePlaylist(p); err != nil {
-				log.Printf("[error] Failed to save playlist %s: %v", name, err)
+
 				continue
 			}
 			removedFrom = append(removedFrom, name)
-			log.Printf("[debug] Successfully removed track from playlist %s", name)
+
 		} else {
-			log.Printf("[debug] Track not found in playlist %s", name)
+
 		}
 	}
 

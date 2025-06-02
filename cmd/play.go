@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -33,13 +32,15 @@ var playCmd = &cobra.Command{
 		// Initialize track manager
 		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("failed to initialize track manager: %v", err)
+			fmt.Fprintf(os.Stderr, "Error initializing track manager: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Get all tracks from the track manager and sort by title
 		trackList := trackManager.ListTracks()
 		if len(trackList) == 0 {
-			log.Fatal("no tracks found in .tracks file. Please run 'rebuild' command first.")
+			fmt.Println("No tracks found. Please run 'rebuild' command first.")
+			os.Exit(1)
 		}
 
 		sort.Slice(trackList, func(i, j int) bool {
@@ -60,7 +61,7 @@ var playCmd = &cobra.Command{
 
 			// Check if the file exists
 			if _, err := os.Stat(trackPath); os.IsNotExist(err) {
-				log.Printf("warning: track file not found: %s", trackPath)
+				// Track file not found
 				continue
 			}
 
@@ -94,9 +95,9 @@ var playCmd = &cobra.Command{
 
 		if len(displayItems) == 0 {
 			if filterQuery != "" {
-				fmt.Printf("\n- no local songs found matching \"%s\".\n", filterQuery)
+				fmt.Printf("No local songs found matching '%s'\n", filterQuery)
 			} else {
-				fmt.Println("\n- no local songs found. use 'ytpl search' to download some.\n")
+				fmt.Println("No local songs found. Use 'ytpl search' to download some")
 			}
 			return
 		}
@@ -104,7 +105,8 @@ var playCmd = &cobra.Command{
 		// Initialize fzf
 		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ play ] > "))
 		if err != nil {
-			log.Fatalf("Error initializing fzf: %v", err)
+			fmt.Fprintf(os.Stderr, "Error initializing fzf: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Show fzf prompt
@@ -119,24 +121,20 @@ var playCmd = &cobra.Command{
 				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
-			log.Fatalf("Error running fzf: %v", err)
+			fmt.Fprintf(os.Stderr, "Error running fzf: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Get the selected track
 		if len(idxs) == 0 {
-			log.Fatalf("no track selected")
+			fmt.Fprintln(os.Stderr, "No track selected")
+			os.Exit(1)
 		}
 		selectedItem := displayItems[idxs[0]]
-		if err != nil {
-			if strings.Contains(err.Error(), "cancelled") {
-				fmt.Println("\n- selection cancelled.\n")
-				return
-			}
-			log.Fatalf("error selecting track: %v", err)
-		}
 
 		if err := player.StartPlayer(cfg, appState, selectedItem.Path); err != nil {
-			log.Fatalf("error starting player: %v", err)
+			fmt.Fprintf(os.Stderr, "Error starting player: %v\n", err)
+			os.Exit(1)
 		}
 
 		appState.CurrentTrackID = selectedItem.Info.ID
@@ -145,9 +143,8 @@ var playCmd = &cobra.Command{
 		appState.DownloadedFilePath = selectedItem.Path
 		appState.IsPlaying = true
 		appState.CurrentPlaylist = ""
-		if err := state.SaveState(); err != nil {
-			log.Printf("error saving state: %v", err)
-		}
+		// Ignore error when saving state
+		_ = state.SaveState()
 
 		// Show the status in the same format as the status command
 		ShowStatus()

@@ -3,7 +3,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -30,7 +29,7 @@ var nextCmd = &cobra.Command{
 		if appState.CurrentPlaylist != "" {
 			err := player.Next(appState)
 			if err != nil {
-				log.Printf("Error sending next command to player: %v", err)
+				// Error sending next command to player
 			}
 			time.Sleep(200 * time.Millisecond) // Short delay to allow mpv to update state
 			// No direct display here. statusCmd.Run() will handle it.
@@ -41,12 +40,12 @@ var nextCmd = &cobra.Command{
 
 				nextFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", nextTrackID))
 				if _, err := os.Stat(nextFilePath); os.IsNotExist(err) {
-					fmt.Printf("\n- warning: next shuffled track \"%s\" is not locally stocked. skipping.\n", nextTrackID) // Use ID as fallback here
 					return
 				}
 
 				if err := player.LoadFile(appState, nextFilePath); err != nil {
-					log.Fatalf("Error loading next shuffled track: %v", err)
+					fmt.Fprintf(os.Stderr, "Error loading next shuffled track: %v\n", err)
+					os.Exit(1)
 				}
 
 				// Update appState based on new track info for display
@@ -55,7 +54,8 @@ var nextCmd = &cobra.Command{
 				appState.LastPlayedTrackIndex = nextIndex
 				appState.IsPlaying = true // Assuming playback starts
 				if err := state.SaveState(); err != nil {
-					log.Printf("Error saving state: %v", err)
+					fmt.Fprintf(os.Stderr, "Error saving state: %v\n", err)
+					os.Exit(1)
 				}
 				time.Sleep(200 * time.Millisecond) // Short delay to allow mpv to update state
 				// No direct display here. statusCmd.Run() will handle it.
@@ -88,7 +88,7 @@ var prevCmd = &cobra.Command{
 		if appState.CurrentPlaylist != "" {
 			err := player.Prev(appState)
 			if err != nil {
-				log.Printf("Error sending prev command to player: %v", err)
+				// Error sending previous command to player
 			}
 			time.Sleep(200 * time.Millisecond) // Short delay
 			// No direct display here. statusCmd.Run() will handle it.
@@ -99,21 +99,19 @@ var prevCmd = &cobra.Command{
 
 				prevFilePath := filepath.Join(cfg.DownloadDir, fmt.Sprintf("%s.mp3", prevTrackID))
 				if _, err := os.Stat(prevFilePath); os.IsNotExist(err) {
-					fmt.Printf("\n- warning: previous shuffled track \"%s\" is not locally stocked. skipping.\n", prevTrackID) // Use ID as fallback
 					return
 				}
 
 				if err := player.LoadFile(appState, prevFilePath); err != nil {
-					log.Fatalf("Error loading previous shuffled track: %v", err)
+					fmt.Fprintf(os.Stderr, "Error loading previous shuffled track: %v\n", err)
+					os.Exit(1)
 				}
 
 				appState.CurrentTrackID = prevTrackID
 				appState.DownloadedFilePath = prevFilePath
 				appState.LastPlayedTrackIndex = prevIndex
 				appState.IsPlaying = true
-				if err := state.SaveState(); err != nil {
-					log.Printf("Error saving state: %v", err)
-				}
+				_ = state.SaveState()
 				time.Sleep(200 * time.Millisecond) // Short delay
 				// No direct display here. statusCmd.Run() will handle it.
 			} else {

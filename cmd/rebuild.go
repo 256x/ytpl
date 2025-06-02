@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +22,8 @@ var rebuildCmd = &cobra.Command{
 		// Initialize track manager
 		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("failed to initialize track manager: %v", err)
+			fmt.Fprintf(os.Stderr, "failed to initialize track manager: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Enable batch mode for better performance
@@ -31,16 +31,18 @@ var rebuildCmd = &cobra.Command{
 		defer trackManager.BatchMode(false) // Ensure batch mode is disabled when we're done
 
 		// Clear existing tracks
-		log.Println("clearing existing tracks...")
+		// Clearing existing tracks...
 		if err := trackManager.Clear(); err != nil {
-			log.Fatalf("failed to clear tracks: %v", err)
+			fmt.Fprintf(os.Stderr, "failed to clear tracks: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Scan download directory for MP3 files
-		log.Println("scanning download directory:", cfg.DownloadDir)
+		// Scanning download directory
 		files, err := ioutil.ReadDir(cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("failed to read download directory: %v", err)
+			fmt.Fprintf(os.Stderr, "failed to read download directory: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Process files in batches
@@ -66,20 +68,21 @@ var rebuildCmd = &cobra.Command{
 				// Process the file
 				if err := processFile(f, trackManager); err != nil {
 					// Non-fatal error, just log it
-					log.Printf("warning: %v", err)
+					// Warning processing file: %v
 				}
 
 				// Update progress
 				processed++
 				if processed%batchSize == 0 {
-					log.Printf("processed %d files...", processed)
+					// Processed %d files...
 				}
 			}(file)
 
 			// Check for errors from goroutines
 			select {
 			case err := <-errChan:
-				log.Fatalf("fatal error processing files: %v", err)
+				fmt.Fprintf(os.Stderr, "fatal error processing files: %v\n", err)
+				os.Exit(1)
 			default:
 			}
 		}
@@ -88,12 +91,13 @@ var rebuildCmd = &cobra.Command{
 		wg.Wait()
 
 		// Final save
-		log.Println("saving tracks to database...")
+		// Saving tracks to database...
 		if err := trackManager.SaveAll(); err != nil {
-			log.Fatalf("failed to save tracks: %v", err)
+			fmt.Fprintf(os.Stderr, "failed to save tracks: %v\n", err)
+			os.Exit(1)
 		}
 
-		log.Printf("rebuild completed. Processed %d files.", processed)
+		fmt.Fprintf(os.Stdout, "rebuild completed. Processed %d files.\n", processed)
 	},
 }
 
@@ -103,7 +107,7 @@ func processFile(file os.FileInfo, trackManager *tracks.Manager) error {
 	videoID := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 	infoPath := filepath.Join(cfg.DownloadDir, videoID+".info.json")
 
-	log.Printf("processing file: %s", file.Name())
+	// Processing file: %s
 
 	// Check if info file exists
 	if _, err := os.Stat(infoPath); os.IsNotExist(err) {
@@ -118,7 +122,7 @@ func processFile(file os.FileInfo, trackManager *tracks.Manager) error {
 
 	// Optimize the info.json file to remove unnecessary fields
 	if err := yt.OptimizeInfoJSON(cfg, videoID); err != nil {
-		log.Printf("warning: failed to optimize info.json for %s: %v", videoID, err)
+		// Warning: failed to optimize info.json for %s: %v
 		// Continue processing even if optimization fails
 	}
 
@@ -141,7 +145,7 @@ func processFile(file os.FileInfo, trackManager *tracks.Manager) error {
 	if artist == "" {
 		artist = "Unknown Artist"
 	}
-	log.Printf("adding track: %s - %s", artist, trackInfo.Title)
+	// Adding track: %s - %s
 
 	// Add track to library
 	if err := trackManager.AddTrack(trackInfo); err != nil {

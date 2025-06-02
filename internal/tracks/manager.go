@@ -2,7 +2,6 @@ package tracks
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -26,25 +25,13 @@ func (m *Manager) BatchMode(enabled bool) {
 
 // NewManager creates a new track manager
 func NewManager(configDir, dataDir string) (*Manager, error) {
-	log.Printf("initializing track manager with dataDir: %s", dataDir)
 	tracksPath := filepath.Join(dataDir, ".tracks")
-	log.Printf("tracks file path: %s", tracksPath)
-	
 	t := New(tracksPath)
 	
 	// Load existing tracks or create new file
-	log.Println("loading tracks...")
-	if err := t.Load(); err != nil {
-		if !os.IsNotExist(err) {
-			log.Printf("error loading tracks: %v", err)
-			return nil, err
-		}
-		log.Println("no existing tracks file found, will create new one")
-	} else {
-		log.Printf("successfully loaded tracks from %s", tracksPath)
+	if err := t.Load(); err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("error loading tracks: %w", err)
 	}
-	
-	log.Printf("track manager initialized with %d tracks", len(t.tracks))
 	return &Manager{
 		tracks:     t,
 		batchMode:  false,
@@ -55,19 +42,11 @@ func NewManager(configDir, dataDir string) (*Manager, error) {
 
 // AddTrack adds a track to the library
 func (m *Manager) AddTrack(track yt.TrackInfo) error {
-	log.Printf("manager.AddTrack called - ID: %s, Title: %s", track.ID, track.Title)
-	currentCount := len(m.tracks.List())
-	log.Printf("current tracks count before add: %d", currentCount)
-	
 	// If not in batch mode, let the tracks handle saving
 	if !m.batchMode {
-		err := m.tracks.Add(track)
-		if err != nil {
-			log.Printf("error adding track: %v", err)
+		if err := m.tracks.Add(track); err != nil {
 			return err
 		}
-		log.Printf("successfully added track to library: %s (new count: %d)", track.Title, len(m.tracks.List()))
-		log.Printf("track details: %+v", track)
 		return nil
 	}
 	
@@ -78,14 +57,12 @@ func (m *Manager) AddTrack(track yt.TrackInfo) error {
 	// Check if track already exists
 	for i, existing := range m.tracks.tracks {
 		if existing.ID == track.ID {
-			log.Printf("updating existing track in batch mode: %s", track.ID)
 			m.tracks.tracks[i] = track
 			return nil
 		}
 	}
 	
 	// Add new track
-	log.Printf("adding new track in batch mode: %s", track.ID)
 	m.tracks.tracks = append(m.tracks.tracks, track)
 	return nil
 }
@@ -144,15 +121,11 @@ func (m *Manager) Clear() error {
 // SaveAll saves all tracks to the storage
 // This is more efficient than saving after each operation
 func (m *Manager) SaveAll() error {
-	logDebug("SaveAll: entering, batch mode: %v", m.batchMode)
-	
 	// Create a copy of tracks to avoid holding the lock during save
 	m.tracks.mu.RLock()
 	tracksCopy := make([]yt.TrackInfo, len(m.tracks.tracks))
 	copy(tracksCopy, m.tracks.tracks)
 	m.tracks.mu.RUnlock()
-	
-	logDebug("SaveAll: saving %d tracks in batch mode", len(tracksCopy))
 	
 	// Create a temporary Tracks instance for saving
 	tmpTracks := &Tracks{

@@ -291,9 +291,7 @@ var listShowCmd = &cobra.Command{
 		appState.CurrentTrackID = selected.TrackID
 		appState.CurrentTrackTitle = trackTitle
 		appState.IsPlaying = true
-		if err := state.SaveState(); err != nil {
-			log.Printf("warning: failed to save state: %v", err)
-		}
+		state.SaveState()
 
 		// Show status after starting player
 		statusCmd.Run(statusCmd, []string{})
@@ -375,9 +373,7 @@ var listPlayCmd = &cobra.Command{
 		appState.CurrentPlaylist = playlistName
 		appState.LastPlayedTrackIndex = 0
 
-		if err := state.SaveState(); err != nil {
-			log.Printf("Error saving state: %v", err)
-		}
+		state.SaveState()
 
 		// Show status instead of custom message
 		ShowStatus()
@@ -467,9 +463,7 @@ var listShuffleCmd = &cobra.Command{
 		appState.CurrentPlaylist = playlistName
 		appState.LastPlayedTrackIndex = 0
 
-		if err := state.SaveState(); err != nil {
-			log.Printf("Error saving state: %v", err)
-		}
+		state.SaveState()
 
 		// Show status instead of custom message
 		ShowStatus()

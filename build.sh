@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e  # Exit on error
-set -x  # Print debug information
 
 # Save current directory
 PROJECT_ROOT=$(pwd)
@@ -32,8 +31,7 @@ for platform in "${PLATFORMS[@]}"; do
         OUTPUT_NAME="${OUTPUT_NAME}.exe"
     fi
     
-    echo "\n=== Building for ${OS}/${ARCH} ==="
-    echo "Output: ${OUTPUT_DIR}/${OUTPUT_NAME}"
+    echo "Building for ${OS}/${ARCH}..."
     
     # Execute build command
     cd "${PROJECT_ROOT}"  # Always return to project root
@@ -49,7 +47,7 @@ for platform in "${PLATFORMS[@]}"; do
     fi
     
     # Compression
-    echo "Compressing..."
+
     cd "${OUTPUT_DIR}"  # Change to output directory
     
     if [ "$OS" = "windows" ]; then
@@ -65,10 +63,9 @@ for platform in "${PLATFORMS[@]}"; do
     cd - > /dev/null  # Return to original directory
 done
 
-echo "\n=== Build Summary ==="
-echo "Build completed. Output files in ${OUTPUT_DIR}:"
+echo "\nBuild completed. Output files in ${OUTPUT_DIR}:"
 ls -lh ${OUTPUT_DIR}/ | grep -v "^total"
 
-echo "\nTo create a release, run the following commands:"
+echo "\nTo create a release:"
 echo "git tag -a v${VERSION} -m \"Release ${VERSION}\""
 echo "git push origin v${VERSION}"

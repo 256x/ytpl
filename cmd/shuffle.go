@@ -3,8 +3,8 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -31,7 +31,8 @@ var shuffleCmd = &cobra.Command{
 		// Initialize track manager
 		trackManager, err := tracks.NewManager("", cfg.DownloadDir)
 		if err != nil {
-			log.Fatalf("error initializing track manager: %v", err)
+			fmt.Fprintf(os.Stderr, "error initializing track manager: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Get all tracks from the manager
@@ -64,7 +65,8 @@ var shuffleCmd = &cobra.Command{
 
 		// Load the shuffled all-songs playlist into mpv
 		if err := player.LoadPlaylistIntoPlayer(cfg, appState, filePaths, 0); err != nil { // Start from index 0
-			log.Fatalf("error loading shuffled global playlist into player: %v", err)
+			fmt.Fprintf(os.Stderr, "error loading shuffled global playlist into player: %v\n", err)
+			os.Exit(1)
 		}
 
 		// Update state for the first track in the shuffled global playlist
@@ -77,7 +79,7 @@ var shuffleCmd = &cobra.Command{
 		appState.LastPlayedTrackIndex = 0
 
 		if err := state.SaveState(); err != nil {
-			log.Printf("error saving state: %v", err)
+			fmt.Fprintf(os.Stderr, "error saving state: %v\n", err)
 		}
 
 		// Show status without extra messages
