@@ -1,0 +1,27 @@
+# Directory to save YouTube audio files
+# Environment variables like $HOME can be used
+download_dir = "$HOME/.local/share/ytpl/mp3/"
+
+# Media player path (mpv is recommended)
+player_path = "mpv"
+
+# MPV IPC (Inter-Process Communication) socket path
+player_ipc_socket_path = "/tmp/ytpl-mpv-socket"
+
+# Default volume (0-100)
+default_volume = 80
+
+# yt-dlp path
+yt_dlp_path = "yt-dlp"
+
+# Directory to save playlists
+playlist_dir = "$HOME/.local/share/ytpl/playlists/"
+
+# Browser to load cookies from (e.g., "chrome", "firefox", "chromium", "brave", "edge")
+cookie_browser = "firefox"
+
+# Browser profile name (usually not needed)
+# cookie_profile = ""
+
+# Maximum number of search results to fetch from YouTube
+max_search_results = 30

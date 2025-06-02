@@ -1,5 +1,4 @@
-# ytpl - Command Line YouTube Music Player
-
+# ytpl - CLI YouTube Music Player and Playlist Manager
 [日本語版](README_jp.md)
 
 `ytpl` is a command-line YouTube music player that allows you to download music from YouTube and manage/play it locally. It features playlist functionality to organize and play your favorite tracks.

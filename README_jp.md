@@ -1,4 +1,4 @@
-# ytpl - Command Line YouTube Music Player
+# ytpl - CLI YouTube Music Player and Playlist Manager
 
 [English](README.md)
 
