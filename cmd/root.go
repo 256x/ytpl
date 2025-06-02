@@ -68,6 +68,7 @@ func init() {
 	rootCmd.AddCommand(shuffleCmd) // Main shuffle command (for all stocked songs)
 	rootCmd.AddCommand(nextCmd)
 	rootCmd.AddCommand(prevCmd)
+	rootCmd.AddCommand(editCmd) // NEW: Added edit command
 
 	// List command and its subcommands
 	rootCmd.AddCommand(listCmd)

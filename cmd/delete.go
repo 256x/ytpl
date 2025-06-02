@@ -123,35 +123,33 @@ var delCmd = &cobra.Command{
 		}
 
 		// Remove from .tracks first
+		var removeTrackErr error
 		if trackManager != nil {
 			if err := trackManager.RemoveTrack(selected.Info.ID); err != nil {
 				log.Printf("warning: failed to remove track from .tracks: %v", err)
+				removeTrackErr = err
 			} else {
 				fmt.Println(util.Green("\n- removed from track library"))
 			}
 		}
 
-		// Remove from playlists
-		var removedFromPlaylists []string
-		playlists, err := playlist.ListAllPlaylists()
-		if err != nil {
-			log.Printf("warning: failed to list playlists: %v", err)
-		} else {
-			for _, plName := range playlists {
-				err := playlist.RemoveTrack(plName, selected.Info.ID)
-				if err != nil && !strings.Contains(err.Error(), "not found") {
-					log.Printf("warning: failed to remove track from playlist %s: %v", plName, err)
-				} else if err == nil {
-					removedFromPlaylists = append(removedFromPlaylists, plName)
-				}
-			}
+		// Release trackManager lock before removing from playlists
+		trackManager = nil
 
-			if len(removedFromPlaylists) > 0 {
-				fmt.Println(util.Green("\n- removed from playlists:"))
-				for _, plName := range removedFromPlaylists {
-					fmt.Printf("  - %s\n", plName)
-				}
+		// Remove from all playlists
+		removedFromPlaylists, err := playlist.RemoveTrackFromAllPlaylists(selected.Info.ID)
+		if err != nil {
+			log.Printf("warning: failed to remove track from playlists: %v", err)
+		} else if len(removedFromPlaylists) > 0 {
+			fmt.Println(util.Green("\n- removed from playlists:"))
+			for _, plName := range removedFromPlaylists {
+				fmt.Printf("  - %s\n", plName)
 			}
+		}
+
+		// If there was an error removing from .tracks, return early
+		if removeTrackErr != nil {
+			log.Fatalf("failed to remove track: %v", removeTrackErr)
 		}
 
 		// Delete files
@@ -172,8 +170,7 @@ var delCmd = &cobra.Command{
 			}
 		}
 
-		// Remove from playlists
-		// TODO: Implement playlist removal
+		// Playlist removal is already handled above
 
 		// Show result
 		if len(deletedFiles) > 0 {

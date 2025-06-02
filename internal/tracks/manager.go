@@ -1,6 +1,7 @@
 package tracks
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -101,18 +102,36 @@ func (m *Manager) ListTracks() []yt.TrackInfo {
 
 // RemoveTrack removes a track from the library
 func (m *Manager) RemoveTrack(id string) error {
-	err := m.tracks.Remove(id)
-	if err != nil {
-		log.Printf("error removing track: %v", err)
-		return err
+	if err := m.tracks.Remove(id); err != nil {
+		return fmt.Errorf("error removing track: %w", err)
 	}
-	
-	// If not in batch mode, save changes immediately
+
+	// Save changes if not in batch mode
 	if !m.batchMode {
-		if err := m.tracks.Save(); err != nil {
-			log.Printf("error saving after removing track: %v", err)
-			return err
+		return m.Save()
+	}
+	return nil
+}
+
+// UpdateTrack updates a track in the manager.
+func (m *Manager) UpdateTrack(track *yt.TrackInfo) error {
+	// Find and update the track
+	updated := false
+	for i, t := range m.tracks.tracks {
+		if t.ID == track.ID {
+			m.tracks.tracks[i] = *track
+			updated = true
+			break
 		}
+	}
+
+	if !updated {
+		return fmt.Errorf("track not found: %s", track.ID)
+	}
+
+	// Save changes if not in batch mode
+	if !m.batchMode {
+		return m.Save()
 	}
 	return nil
 }

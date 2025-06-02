@@ -123,7 +123,7 @@ func (t *Tracks) Remove(id string) error {
 	for i, track := range t.tracks {
 		if track.ID == id {
 			t.tracks = append(t.tracks[:i], t.tracks[i+1:]...)
-			return t.Save()
+			return nil
 		}
 	}
 	return nil

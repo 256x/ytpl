@@ -1,7 +1,7 @@
-// cmd/play.go
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -9,9 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"ytpl/internal/player"
 	"ytpl/internal/playertags"
-	"ytpl/internal/state"
 	"ytpl/internal/tracks"
 	"ytpl/internal/util"
 	"ytpl/internal/yt"
@@ -20,9 +18,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var playCmd = &cobra.Command{
-	Use:   "play [query]",
-	Short: "Play a locally stocked song",
+var editCmd = &cobra.Command{
+	Use:   "edit [query]",
+	Short: "Edit track metadata",
 	Args:  cobra.MaximumNArgs(1), // Optional query for filtering
 	Run: func(cmd *cobra.Command, args []string) {
 		filterQuery := ""
@@ -102,59 +100,74 @@ var playCmd = &cobra.Command{
 		}
 
 		// Initialize fzf
-		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ play ] > "))
+		f, err := fuzzyfinder.New(fuzzyfinder.WithPrompt("[ edit ] > "))
 		if err != nil {
-			log.Fatalf("Error initializing fzf: %v", err)
+			log.Fatalf("Error initializing fuzzy finder: %v", err)
 		}
 
-		// Show fzf prompt
-		idxs, err := f.Find(
-			displayItems,
-			func(i int) string {
-				return displayItems[i].DisplayText
-			},
-		)
+		// Show track selection
+		idxs, err := f.Find(displayItems, func(i int) string {
+			return displayItems[i].DisplayText
+		})
+
 		if err != nil {
 			if err == fuzzyfinder.ErrAbort {
 				fmt.Println("\n- selection cancelled.\n")
 				return
 			}
-			log.Fatalf("Error running fzf: %v", err)
+			log.Fatalf("Error selecting track: %v", err)
 		}
 
-		// Get the selected track
 		if len(idxs) == 0 {
 			log.Fatalf("no track selected")
 		}
+
 		selectedItem := displayItems[idxs[0]]
+		currentTitle := selectedItem.Info.Title
+
+		// Show current title and get new title
+		fmt.Println()
+		fmt.Printf("- current: %s\n", currentTitle)
+		fmt.Printf("      new: ")
+
+		// Read new title from user input
+		reader := bufio.NewReader(os.Stdin)
+		newTitle, err := reader.ReadString('\n')
 		if err != nil {
-			if strings.Contains(err.Error(), "cancelled") {
-				fmt.Println("\n- selection cancelled.\n")
-				return
+			log.Fatalf("Error reading input: %v", err)
+		}
+
+		// Trim whitespace and check if empty
+		newTitle = strings.TrimSpace(newTitle)
+		if newTitle == "" {
+			fmt.Println("\nNo changes made.")
+			return
+		}
+
+		// If title hasn't changed, return early
+		if newTitle == currentTitle {
+			fmt.Println("\nNo changes made.")
+			return
+		}
+
+		// Update title if changed
+		if newTitle != "" && newTitle != currentTitle {
+			selectedItem.Info.Title = newTitle
+			if err := trackManager.UpdateTrack(selectedItem.Info); err != nil {
+				log.Fatalf("Error updating track: %v", err)
 			}
-			log.Fatalf("error selecting track: %v", err)
+			if err := trackManager.SaveAll(); err != nil {
+				log.Fatalf("Error saving tracks: %v", err)
+			}
+			fmt.Println("\nTitle updated.\n")
+		} else if newTitle == "" {
+			fmt.Println("\nEdit cancelled.\n")
+		} else {
+			fmt.Println("\nNo changes made.\n")
 		}
-
-		if err := player.StartPlayer(cfg, appState, selectedItem.Path); err != nil {
-			log.Fatalf("error starting player: %v", err)
-		}
-
-		appState.CurrentTrackID = selectedItem.Info.ID
-		appState.CurrentTrackTitle = selectedItem.DisplayTitle // Store the selected display title
-		appState.CurrentTrackDuration = selectedItem.Info.Duration
-		appState.DownloadedFilePath = selectedItem.Path
-		appState.IsPlaying = true
-		appState.CurrentPlaylist = ""
-		if err := state.SaveState(); err != nil {
-			log.Printf("error saving state: %v", err)
-		}
-
-		// Show the status in the same format as the status command
-		ShowStatus()
 	},
 }
 
-// init initializes the play command
 func init() {
-	rootCmd.AddCommand(playCmd)
+	rootCmd.AddCommand(editCmd)
 }
