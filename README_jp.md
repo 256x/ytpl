@@ -1,4 +1,4 @@
-# ytpl - CLI YouTube Music Player and Playlist Manager
+# ytpl – CLI Music Player and Playlist Manager (YouTube-based)
 
 [English](README.md)
 
