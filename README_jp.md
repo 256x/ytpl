@@ -6,7 +6,7 @@
 
 ![Image](https://github.com/user-attachments/assets/8d1abd82-91f6-45dd-9ce5-144bc9221395)
 
-**ビジュアライザーは[cli-visualizer](https://github.com/PosixAlchemist/cli-visualizer)**
+* ビジュアライザーは[cli-visualizer](https://github.com/PosixAlchemist/cli-visualizer)
 
 ## 主な機能
 
