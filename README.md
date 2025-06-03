@@ -3,6 +3,8 @@
 
 `ytpl` is a command-line YouTube music player that allows you to download music from YouTube and manage/play it locally. It features playlist functionality to organize and play your favorite tracks.
 
+![Image](https://github.com/user-attachments/assets/8d1abd82-91f6-45dd-9ce5-144bc9221395)
+
 ## Key Features
 
 - Download and play music from YouTube
