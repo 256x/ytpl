@@ -5,6 +5,7 @@
 `ytpl` は、YouTubeから音楽をダウンロードしてローカルで管理・再生できるコマンドライン YouTube ミュージックプレイヤーです。プレイリスト機能により、お気に入りの楽曲を整理して再生することができます。
 
 ![Image](https://github.com/user-attachments/assets/8d1abd82-91f6-45dd-9ce5-144bc9221395)
+
 (ビジュアライザーは[cli-visualizer](https://github.com/PosixAlchemist/cli-visualizer)
 
 ## 主な機能
