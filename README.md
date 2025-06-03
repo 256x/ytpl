@@ -5,6 +5,8 @@
 
 ![Image](https://github.com/user-attachments/assets/8d1abd82-91f6-45dd-9ce5-144bc9221395)
 
+***thanks [cli-visualizer](https://github.com/PosixAlchemist/cli-visualizer)***
+
 ## Key Features
 
 - Download and play music from YouTube
